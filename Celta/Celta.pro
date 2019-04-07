@@ -26,10 +26,12 @@ CONFIG += c++11
 
 SOURCES += \
         main.cpp \
-        mainprincipal.cpp
+        mainprincipal.cpp \
+    arduino.cpp
 
 HEADERS += \
-        mainprincipal.h
+        mainprincipal.h \
+    arduino.h
 
 FORMS += \
         mainprincipal.ui

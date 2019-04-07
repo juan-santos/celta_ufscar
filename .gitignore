@@ -1,6 +1,6 @@
 
-# Created by https://www.gitignore.io/api/linux,qtcreator
-# Edit at https://www.gitignore.io/?templates=linux,qtcreator
+# Created by https://www.gitignore.io/api/qt,linux,windows,qtcreator
+# Edit at https://www.gitignore.io/?templates=qt,linux,windows,qtcreator
 
 ### Linux ###
 *~
@@ -16,6 +16,57 @@
 
 # .nfs files are created when an open file is removed but is still being accessed
 .nfs*
+
+### Qt ###
+# C++ objects and libs
+*.slo
+*.lo
+*.o
+*.a
+*.la
+*.lai
+*.so
+*.dll
+*.dylib
+
+# Qt-es
+object_script.*.Release
+object_script.*.Debug
+*_plugin_import.cpp
+/.qmake.cache
+/.qmake.stash
+*.pro.user
+*.pro.user.*
+*.qbs.user
+*.qbs.user.*
+*.moc
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+*.qmlc
+*.jsc
+Makefile*
+*build-*
+
+# Qt unit tests
+target_wrapper.*
+
+# QtCreator
+*.autosave
+
+# QtCreator Qml
+*.qmlproject.user
+*.qmlproject.user.*
+
+# QtCreator CMake
+CMakeLists.txt.user*
+
+# QtCreator 4.8< compilation database
+compile_commands.json
+
+# QtCreator local machine specific files for imported projects
+*creator.user*
 
 ### QtCreator ###
 # gitignore for Qt Creator like IDE for pure C/C++ project without Qt
@@ -43,6 +94,30 @@
 *.creator.user*
 
 # Qt Creator backups
-*.autosave
 
-# End of https://www.gitignore.io/api/linux,qtcreator
+### Windows ###
+# Windows thumbnail cache files
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+
+# Dump file
+*.stackdump
+
+# Folder config file
+[Dd]esktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
+
+# End of https://www.gitignore.io/api/qt,linux,windows,qtcreator
