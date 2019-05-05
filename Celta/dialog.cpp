@@ -11,10 +11,11 @@ Dialog::Dialog(QWidget *parent) :
     connect(&arduino, &Arduino::error, this, &Dialog::processError);
     connect(&arduino, &Arduino::timeout, this, &Dialog::processTimeout);
 
-    arduino.transaction(" ");
+    //deixo com tudo desativado como valor inicial
+    arduino.transaction(' ', 100);
 
     //controles possíveis
-    setControlsEnabled(false);
+    setControlsEnabled(true);
 }
 
 //Celta
@@ -23,7 +24,12 @@ Dialog::~Dialog() {
 }
 
 void Dialog::on_btnIniciar_clicked() {
-   arduino.transaction(ui->txtTexto->toPlainText());
+
+   for(int i = 0; i < ui->txtTexto->toPlainText().size();i++){
+      arduino.transaction(ui->txtTexto->toPlainText().at(i), 3000);
+      arduino.sleep(3);
+   }
+
    setControlsEnabled(false);
 }
 

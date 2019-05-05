@@ -13,7 +13,7 @@ class Arduino : public QThread {
 public:
     explicit Arduino(QObject *parent = nullptr);
     ~Arduino() override;
-    void transaction(const QString &request);
+    void transaction(const QChar &request, int waitTimeout);
     void stopLeitura();
 
 signals:
@@ -24,11 +24,11 @@ signals:
 private:
 
     void run() override;
-    int m_waitTimeout = 30000;
+    int m_waitTimeout = 0;
     QMutex m_mutex;
     QWaitCondition m_cond;
     bool m_quit = false;
-    QString m_request;
+    QChar m_request;
 
     static const quint16 arduino_uno_vendor_id = 9025;
     static const quint16 arduino_uno_product_id = 67;

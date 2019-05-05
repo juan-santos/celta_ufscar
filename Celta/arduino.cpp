@@ -9,16 +9,17 @@ Arduino::Arduino(QObject *parent): QThread(parent) {
 
 Arduino::~Arduino() {
     m_mutex.lock();
-    m_quit = true;
-    m_cond.wakeOne();
+        m_quit = true;
+        m_cond.wakeOne();
     m_mutex.unlock();
+
     wait();
 }
 
-void Arduino::transaction(const QString &request) {
+void Arduino::transaction(const QChar &request, int waitTimeout) {
     const QMutexLocker locker(&m_mutex);
     m_request = request;
-
+    m_waitTimeout = waitTimeout;
     if (!isRunning())
         start();
     else
@@ -26,69 +27,81 @@ void Arduino::transaction(const QString &request) {
 }
 
 void Arduino::run() {
-    qDebug() << "Executando...";
-    QString currentRequest = m_request;
     QSerialPort arduino;
 
-    if(conectarArduino(&arduino)){
-        qDebug() << "Conectou!";
-    } else{
-        emit error(tr("Arduino desconectado"));
-        return;
-    }
+    m_mutex.lock();
+        QChar currentRequest = m_request;
+        int waitTimeout = m_waitTimeout;
 
-    if (!arduino.open(QSerialPort::ReadWrite)) {
-        emit error(tr("Não foi possível abrir conexão de escrita/leitura com o Arduino"));
-        return;
-    }
+        if(!conectarArduino(&arduino)){
+            emit error(tr("Arduino não está conectado"));
+            m_mutex.unlock();
+            return;
+        }
 
-    int i = 0;
-    while (!m_quit && i < currentRequest.size()) {
+        if (!arduino.open(QSerialPort::ReadWrite)) {
+            emit error(tr("Não foi possível abrir conexão de escrita/leitura com o Arduino"));
+            m_mutex.unlock();
+            return;
+        }
+    m_mutex.unlock();
+
+    while (!m_quit) {
 
         m_mutex.lock();
-
-            qDebug() << "Letra " << currentRequest.at(i);
-
-            QString comando = this->escreveLetra(currentRequest.at(i++));
-            arduino.write(comando.toStdString().c_str());
-            qDebug() << "comando " << comando;
-            this->sleep(3);
-
-            if (arduino.waitForBytesWritten(this->m_waitTimeout)) {
-
-                // ler resposta
-                if (arduino.waitForReadyRead(this->m_waitTimeout)) {
-                    QByteArray responseData = arduino.readAll();
-                    while (arduino.waitForReadyRead(10))
-                        responseData += arduino.readAll();
-
-                    const QString response = QString::fromUtf8(responseData);
-                    qDebug() << "Resposta " << response;
-
-                } else {
-                    emit timeout(tr("Tempo de leitura ultrapassado"));
+            if(!arduino.isOpen()){
+                this->conectarArduino(&arduino);
+                if (!arduino.open(QSerialPort::ReadWrite)) {
+                    emit error(tr("Não foi possível abrir conexão de escrita/leitura com o Arduino"));
                     m_mutex.unlock();
+                    return;
+                }
+            }
+        m_mutex.unlock();
+
+        QString comando = this->escreveLetra(currentRequest);
+        arduino.write(comando.toStdString().c_str());
+
+        qDebug() << "Letra " << currentRequest << "comando " << comando;
+
+        if (arduino.waitForBytesWritten(waitTimeout)) {
+            if (arduino.waitForReadyRead(waitTimeout)) {// ler resposta
+                QByteArray responseData = arduino.readAll();
+                while (arduino.waitForReadyRead(10)){
+                    responseData += arduino.readAll();
                 }
 
-            } else{
-                emit timeout(tr("Tempo de escrita ultrapassado"));
-                m_mutex.unlock();
+                const QString response = QString::fromUtf8(responseData);
+                emit this->response("Letra finalizada");
+
+                qDebug() << "Resposta " << response;
+
+            } else {
+                emit timeout(tr("Ultrapassou tempo de leitura"));
             }
 
+        } else {
+            emit timeout(tr("Ultrapassou tempo de escrita"));
+        }
 
+        //this->sleep(3);
+
+        m_mutex.lock();
+            m_cond.wait(&m_mutex);
+            currentRequest = m_request;
+            waitTimeout = m_waitTimeout;
         m_mutex.unlock();
-    }
-
-    emit this->response("Escrita finalizada com sucesso");
-    QString comando = this->escreveLetra(' ');
-    arduino.write(comando.toStdString().c_str());
-
-    if(arduino.isOpen()){
-        arduino.close();
     }
 }
 
 bool Arduino::conectarArduino(QSerialPort *arduino){
+
+    //se não for nulo, apago o ponteiro da antiga conexão
+    if(arduino->isOpen()){
+       delete arduino ;
+       arduino = new QSerialPort();
+    }
+
     bool arduino_is_available = false;
     QString arduino_port_name = "";
 
@@ -114,7 +127,6 @@ bool Arduino::conectarArduino(QSerialPort *arduino){
 
     return false;
 }
-
 
 QString Arduino::escreveLetra(const QChar &letra){
 
