@@ -24,13 +24,15 @@ Dialog::~Dialog() {
 }
 
 void Dialog::on_btnIniciar_clicked() {
+    setControlsEnabled(false);
 
    for(int i = 0; i < ui->txtTexto->toPlainText().size();i++){
       arduino.transaction(ui->txtTexto->toPlainText().at(i), 3000);
-      arduino.sleep(3);
+      arduino.sleep(1 * ui->qSliderVelocimetro->value());
    }
 
-   setControlsEnabled(false);
+   setControlsEnabled(true);
+
 }
 
 void Dialog::on_btnPausar_clicked() {
@@ -51,7 +53,7 @@ void Dialog::setControlsEnabled(bool enable) {
 }
 
 void Dialog::showResponse(const QString &s) {
-    qDebug() << s;
+    //qDebug() << s;
     setControlsEnabled(true);
 }
 

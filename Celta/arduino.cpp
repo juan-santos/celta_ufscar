@@ -57,36 +57,31 @@ void Arduino::run() {
                     return;
                 }
             }
-        m_mutex.unlock();
 
-        QString comando = this->escreveLetra(currentRequest);
-        arduino.write(comando.toStdString().c_str());
+            QString comando = this->escreveLetra(currentRequest);
+            arduino.write(comando.toStdString().c_str());
 
-        qDebug() << "Letra " << currentRequest << "comando " << comando;
+            qDebug() << "Letra " << currentRequest << "comando " << comando;
 
-        if (arduino.waitForBytesWritten(waitTimeout)) {
-            if (arduino.waitForReadyRead(waitTimeout)) {// ler resposta
-                QByteArray responseData = arduino.readAll();
-                while (arduino.waitForReadyRead(10)){
-                    responseData += arduino.readAll();
+            if (arduino.waitForBytesWritten(waitTimeout)) {
+                if (arduino.waitForReadyRead(waitTimeout)) {// ler resposta
+                    QByteArray responseData = arduino.readAll();
+                    while (arduino.waitForReadyRead(10)){
+                        responseData += arduino.readAll();
+                    }
+
+                    const QString response = QString::fromUtf8(responseData);
+                    emit this->response("Letra finalizada");
+
+                } else {
+                    emit timeout(tr("Ultrapassou tempo de leitura"));
                 }
 
-                const QString response = QString::fromUtf8(responseData);
-                emit this->response("Letra finalizada");
-
-                qDebug() << "Resposta " << response;
-
             } else {
-                emit timeout(tr("Ultrapassou tempo de leitura"));
+                emit timeout(tr("Ultrapassou tempo de escrita"));
             }
 
-        } else {
-            emit timeout(tr("Ultrapassou tempo de escrita"));
-        }
 
-        //this->sleep(3);
-
-        m_mutex.lock();
             m_cond.wait(&m_mutex);
             currentRequest = m_request;
             waitTimeout = m_waitTimeout;
@@ -129,21 +124,86 @@ bool Arduino::conectarArduino(QSerialPort *arduino){
 }
 
 QString Arduino::escreveLetra(const QChar &letra){
-
-    if (letra == 'a'){
-        return "d0l1";
-    }
-
-    if (letra == 'b'){
-        return "d0l1l2";
-    }
-
-    if (letra == 'c'){
-        return "d0l1l4";
-    }
-
     if (letra == ' '){
         return "d0";
+    }
+    if (letra == 'a'){
+        return "l1d2d3d4d5d6";
+    }
+    if (letra == 'b'){
+        return "l1l2d3d4d5d6";
+    }
+    if (letra == 'c'){
+        return "l1d2d3l4d5d6";
+    }
+    if (letra == 'd'){
+        return "l1d2d3l4l5d6";
+    }
+    if (letra == 'e'){
+        return "l1d2d3d4l5d6";
+    }
+    if (letra == 'f'){
+        return "l1l2d3l4d5d6";
+    }
+    if (letra == 'g'){
+        return "l1l2d3l4l5d6";
+    }
+    if (letra == 'h'){
+        return "l1l2d3d4l5d6";
+    }
+    if (letra == 'i'){
+        return "d1l2d3l4d5d6";
+    }
+    if (letra == 'j'){
+        return "d1l2d3l4l5d6";
+    }
+    if (letra == 'k'){
+        return "l1d2l3d4d5d6";
+    }
+    if (letra == 'l'){
+        return "l1l2l3d4d5d6";
+    }
+    if (letra == 'm'){
+        return "l1d2l3l4d5d6";
+    }
+    if (letra == 'n'){
+        return "l1d2l3l4l5d6";
+    }
+    if (letra == 'o'){
+        return "l1d2l3d4l5d6";
+    }
+    if (letra == 'p'){
+        return "l1l2l3l4d5d6";
+    }
+    if (letra == 'q'){
+        return "l1l2l3l4l5d6";
+    }
+    if (letra == 'r'){
+        return "l1l2l3d4l5d6";
+    }
+    if (letra == 's'){
+        return "d1l2l3l4d5d6";
+    }
+    if (letra == 't'){
+        return "d1l2l3l4l5d6";
+    }
+    if (letra == 'u'){
+        return "l1d2l3d4d5l6";
+    }
+    if (letra == 'v'){
+        return "l1l2l3d4d5l6";
+    }
+    if (letra == 'w'){
+        return "d1l2d3l4l5l6";
+    }
+    if (letra == 'x'){
+        return "l1d2l3l4d5l6";
+    }
+    if (letra == 'y'){
+        return "l1d2l3l4l5l6";
+    }
+    if (letra == 'z'){
+        return "l1d2l3d4l5l6";
     }
 
     return "d0";
