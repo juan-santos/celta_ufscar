@@ -21,8 +21,8 @@ void setup() {
 
 void loop() {
   
-  if(Serial.available()){
-    
+  while(Serial.available()){
+ 
     char vlFuncao = Serial.read();
     int vlPonto = Serial.parseInt();
     
@@ -37,8 +37,9 @@ void loop() {
         ativarPonto(vlPonto, OFF);
       }
     }
-  }
 
+    Serial.write("ok");
+  }
 }
 
 void ativarPonto(int vpPonto, int vpOperacao){

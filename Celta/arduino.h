@@ -1,32 +1,40 @@
 #ifndef ARDUINO_H
 #define ARDUINO_H
 
+#include <QMutex>
+#include <QThread>
+#include <QWaitCondition>
 #include <QSerialPort>
 
-class Arduino {
+class Arduino : public QThread {
+
+    Q_OBJECT
 
 public:
-    Arduino();
-    ~Arduino();
+    explicit Arduino(QObject *parent = nullptr);
+    ~Arduino() override;
+    void transaction(const QString &request);
+    void stopLeitura();
 
-    void reconectarArduino();
-
-    //opções de leitura
-    void iniciarLeitura(QString texto);
-    void reiniciarLeitura();
-    void pausarLeitura();
-    void pararLeitura();
+signals:
+    void response(const QString &s);
+    void error(const QString &s);
+    void timeout(const QString &s);
 
 private:
-    void conectarArduino();
-    void updateArduino(QString command);
-    void escreveLetra(QChar letra);
 
-    QSerialPort *conexao;
+    void run() override;
+    int m_waitTimeout = 30000;
+    QMutex m_mutex;
+    QWaitCondition m_cond;
+    bool m_quit = false;
+    QString m_request;
+
     static const quint16 arduino_uno_vendor_id = 9025;
     static const quint16 arduino_uno_product_id = 67;
-    QString arduino_port_name;
-    bool arduino_is_available;
+
+    bool conectarArduino(QSerialPort *arduino);
+    QString escreveLetra(const QChar &letra);
 
 };
 

@@ -4,20 +4,93 @@
 #include <QSerialPortInfo>
 #include <QDebug>
 
-Arduino::Arduino() {
-    this->conectarArduino();
+Arduino::Arduino(QObject *parent): QThread(parent) {
 }
 
 Arduino::~Arduino() {
-    if(conexao->isOpen()){
-        conexao->close();
+    m_mutex.lock();
+    m_quit = true;
+    m_cond.wakeOne();
+    m_mutex.unlock();
+    wait();
+}
+
+void Arduino::transaction(const QString &request) {
+    const QMutexLocker locker(&m_mutex);
+    m_request = request;
+
+    if (!isRunning())
+        start();
+    else
+        m_cond.wakeOne();
+}
+
+void Arduino::run() {
+    qDebug() << "Executando...";
+    QString currentRequest = m_request;
+    QSerialPort arduino;
+
+    if(conectarArduino(&arduino)){
+        qDebug() << "Conectou!";
+    } else{
+        emit error(tr("Arduino desconectado"));
+        return;
+    }
+
+    if (!arduino.open(QSerialPort::ReadWrite)) {
+        emit error(tr("Não foi possível abrir conexão de escrita/leitura com o Arduino"));
+        return;
+    }
+
+    int i = 0;
+    while (!m_quit && i < currentRequest.size()) {
+
+        m_mutex.lock();
+
+            qDebug() << "Letra " << currentRequest.at(i);
+
+            QString comando = this->escreveLetra(currentRequest.at(i++));
+            arduino.write(comando.toStdString().c_str());
+            qDebug() << "comando " << comando;
+            this->sleep(3);
+
+            if (arduino.waitForBytesWritten(this->m_waitTimeout)) {
+
+                // ler resposta
+                if (arduino.waitForReadyRead(this->m_waitTimeout)) {
+                    QByteArray responseData = arduino.readAll();
+                    while (arduino.waitForReadyRead(10))
+                        responseData += arduino.readAll();
+
+                    const QString response = QString::fromUtf8(responseData);
+                    qDebug() << "Resposta " << response;
+
+                } else {
+                    emit timeout(tr("Tempo de leitura ultrapassado"));
+                    m_mutex.unlock();
+                }
+
+            } else{
+                emit timeout(tr("Tempo de escrita ultrapassado"));
+                m_mutex.unlock();
+            }
+
+
+        m_mutex.unlock();
+    }
+
+    emit this->response("Escrita finalizada com sucesso");
+    QString comando = this->escreveLetra(' ');
+    arduino.write(comando.toStdString().c_str());
+
+    if(arduino.isOpen()){
+        arduino.close();
     }
 }
 
-void Arduino::conectarArduino(){
-    conexao = new QSerialPort();
-    arduino_is_available = false;
-    arduino_port_name = "";
+bool Arduino::conectarArduino(QSerialPort *arduino){
+    bool arduino_is_available = false;
+    QString arduino_port_name = "";
 
     foreach(const QSerialPortInfo &serialPortInfo, QSerialPortInfo::availablePorts()){
         if(serialPortInfo.hasVendorIdentifier() && serialPortInfo.hasProductIdentifier()){
@@ -30,295 +103,40 @@ void Arduino::conectarArduino(){
     }
 
     if(arduino_is_available){
-        conexao->setPortName(arduino_port_name);
-        conexao->open(QSerialPort::WriteOnly);
-        conexao->setBaudRate(QSerialPort::Baud9600);
-        conexao->setDataBits(QSerialPort::Data8);
-        conexao->setParity(QSerialPort::NoParity);
-        conexao->setStopBits(QSerialPort::OneStop);
-        conexao->setFlowControl(QSerialPort::NoFlowControl);
-    }
-}
-
-void Arduino::reconectarArduino(){
-    if(conexao->isOpen()){
-        conexao->close();
+        arduino->setPortName(arduino_port_name);
+        arduino->setBaudRate(QSerialPort::Baud9600);
+        arduino->setDataBits(QSerialPort::Data8);
+        arduino->setParity(QSerialPort::NoParity);
+        arduino->setStopBits(QSerialPort::OneStop);
+        arduino->setFlowControl(QSerialPort::NoFlowControl);
+        return true;
     }
 
-    this->conectarArduino();
+    return false;
 }
 
-void Arduino::iniciarLeitura(QString texto){
 
-    for(int i = 0; i < texto.size();i++){
-        escreveLetra(texto.at(i));
-    }
-
-}
-
-void Arduino::pausarLeitura(){
-
-}
-
-void Arduino::reiniciarLeitura(){
-
-}
-
-void Arduino::pararLeitura(){
-    this->updateArduino(QString("d0"));
-}
-
-void Arduino::escreveLetra(QChar letra){
+QString Arduino::escreveLetra(const QChar &letra){
 
     if (letra == 'a'){
-        this->updateArduino(QString("l1"));
-        this->updateArduino(QString("d2"));
-        this->updateArduino(QString("d3"));
-        this->updateArduino(QString("d4"));
-        this->updateArduino(QString("d5"));
-        this->updateArduino(QString("d6"));
-        return;
+        return "d0l1";
     }
+
     if (letra == 'b'){
-        this->updateArduino(QString("l1"));
-        this->updateArduino(QString("l2"));
-        this->updateArduino(QString("d3"));
-        this->updateArduino(QString("d4"));
-        this->updateArduino(QString("d5"));
-        this->updateArduino(QString("d6"));
-        return;
+        return "d0l1l2";
     }
+
     if (letra == 'c'){
-        this->updateArduino(QString("l1"));
-        this->updateArduino(QString("d2"));
-        this->updateArduino(QString("d3"));
-        this->updateArduino(QString("l4"));
-        this->updateArduino(QString("d5"));
-        this->updateArduino(QString("d6"));
-        return;
-    }
-    if (letra == 'd'){
-        this->updateArduino(QString("l1"));
-        this->updateArduino(QString("d2"));
-        this->updateArduino(QString("d3"));
-        this->updateArduino(QString("l4"));
-        this->updateArduino(QString("l5"));
-        this->updateArduino(QString("d6"));
-        return;
-    }
-    if (letra == 'e'){
-        this->updateArduino(QString("l1"));
-        this->updateArduino(QString("d2"));
-        this->updateArduino(QString("d3"));
-        this->updateArduino(QString("d4"));
-        this->updateArduino(QString("l5"));
-        this->updateArduino(QString("d6"));
-        return;
-    }
-    if (letra == 'f'){
-        this->updateArduino(QString("l1"));
-        this->updateArduino(QString("l2"));
-        this->updateArduino(QString("d3"));
-        this->updateArduino(QString("l4"));
-        this->updateArduino(QString("d5"));
-        this->updateArduino(QString("d6"));
-        return;
-    }
-    if (letra == 'g'){
-        this->updateArduino(QString("l1"));
-        this->updateArduino(QString("l2"));
-        this->updateArduino(QString("d3"));
-        this->updateArduino(QString("l4"));
-        this->updateArduino(QString("l5"));
-        this->updateArduino(QString("d6"));
-        return;
-    }
-    if (letra == 'h'){
-        this->updateArduino(QString("l1"));
-        this->updateArduino(QString("l2"));
-        this->updateArduino(QString("d3"));
-        this->updateArduino(QString("d4"));
-        this->updateArduino(QString("l5"));
-        this->updateArduino(QString("d6"));
-        return;
-    }
-    if (letra == 'i'){
-        this->updateArduino(QString("d1"));
-        this->updateArduino(QString("l2"));
-        this->updateArduino(QString("d3"));
-        this->updateArduino(QString("l4"));
-        this->updateArduino(QString("d5"));
-        this->updateArduino(QString("d6"));
-        return;
-    }
-    if (letra == 'j'){
-        this->updateArduino(QString("d1"));
-        this->updateArduino(QString("l2"));
-        this->updateArduino(QString("d3"));
-        this->updateArduino(QString("l4"));
-        this->updateArduino(QString("l5"));
-        this->updateArduino(QString("d6"));
-        return;
-    }
-    if (letra == 'k'){
-        this->updateArduino(QString("l1"));
-        this->updateArduino(QString("d2"));
-        this->updateArduino(QString("l3"));
-        this->updateArduino(QString("d4"));
-        this->updateArduino(QString("d5"));
-        this->updateArduino(QString("d6"));
-        return;
-    }
-    if (letra == 'l'){
-        this->updateArduino(QString("l1"));
-        this->updateArduino(QString("l2"));
-        this->updateArduino(QString("l3"));
-        this->updateArduino(QString("d4"));
-        this->updateArduino(QString("d5"));
-        this->updateArduino(QString("d6"));
-        return;
-    }
-    if (letra == 'm'){
-        this->updateArduino(QString("l1"));
-        this->updateArduino(QString("d2"));
-        this->updateArduino(QString("l3"));
-        this->updateArduino(QString("l4"));
-        this->updateArduino(QString("d5"));
-        this->updateArduino(QString("d6"));
-        return;
-    }
-    if (letra == 'n'){
-        this->updateArduino(QString("l1"));
-        this->updateArduino(QString("d2"));
-        this->updateArduino(QString("l3"));
-        this->updateArduino(QString("l4"));
-        this->updateArduino(QString("l5"));
-        this->updateArduino(QString("d6"));
-        return;
-    }
-    if (letra == 'o'){
-        this->updateArduino(QString("l1"));
-        this->updateArduino(QString("d2"));
-        this->updateArduino(QString("l3"));
-        this->updateArduino(QString("d4"));
-        this->updateArduino(QString("l5"));
-        this->updateArduino(QString("d6"));
-        return;
-    }
-    if (letra == 'p'){
-        this->updateArduino(QString("l1"));
-        this->updateArduino(QString("l2"));
-        this->updateArduino(QString("l3"));
-        this->updateArduino(QString("l4"));
-        this->updateArduino(QString("d5"));
-        this->updateArduino(QString("d6"));
-        return;
-    }
-    if (letra == 'q'){
-        this->updateArduino(QString("l1"));
-        this->updateArduino(QString("l2"));
-        this->updateArduino(QString("l3"));
-        this->updateArduino(QString("l4"));
-        this->updateArduino(QString("l5"));
-        this->updateArduino(QString("d6"));
-        return;
-    }
-    if (letra == 'r'){
-        this->updateArduino(QString("l1"));
-        this->updateArduino(QString("l2"));
-        this->updateArduino(QString("l3"));
-        this->updateArduino(QString("d4"));
-        this->updateArduino(QString("l5"));
-        this->updateArduino(QString("d6"));
-        return;
-    }
-    if (letra == 's'){
-        this->updateArduino(QString("d1"));
-        this->updateArduino(QString("l2"));
-        this->updateArduino(QString("l3"));
-        this->updateArduino(QString("l4"));
-        this->updateArduino(QString("d5"));
-        this->updateArduino(QString("d6"));
-        return;
-    }
-    if (letra == 't'){
-        this->updateArduino(QString("d1"));
-        this->updateArduino(QString("l2"));
-        this->updateArduino(QString("l3"));
-        this->updateArduino(QString("l4"));
-        this->updateArduino(QString("l5"));
-        this->updateArduino(QString("d6"));
-        return;
-    }
-    if (letra == 'u'){
-        this->updateArduino(QString("l1"));
-        this->updateArduino(QString("d2"));
-        this->updateArduino(QString("l3"));
-        this->updateArduino(QString("d4"));
-        this->updateArduino(QString("d5"));
-        this->updateArduino(QString("l6"));
-        return;
-    }
-    if (letra == 'v'){
-        this->updateArduino(QString("l1"));
-        this->updateArduino(QString("l2"));
-        this->updateArduino(QString("l3"));
-        this->updateArduino(QString("d4"));
-        this->updateArduino(QString("d5"));
-        this->updateArduino(QString("l6"));
-        return;
-    }
-    if (letra == 'w'){
-        this->updateArduino(QString("d1"));
-        this->updateArduino(QString("l2"));
-        this->updateArduino(QString("d3"));
-        this->updateArduino(QString("l4"));
-        this->updateArduino(QString("l5"));
-        this->updateArduino(QString("l6"));
-        return;
-    }
-    if (letra == 'x'){
-        this->updateArduino(QString("l1"));
-        this->updateArduino(QString("d2"));
-        this->updateArduino(QString("l3"));
-        this->updateArduino(QString("l4"));
-        this->updateArduino(QString("d5"));
-        this->updateArduino(QString("l6"));
-        return;
-    }
-    if (letra == 'y'){
-        this->updateArduino(QString("l1"));
-        this->updateArduino(QString("d2"));
-        this->updateArduino(QString("l3"));
-        this->updateArduino(QString("l4"));
-        this->updateArduino(QString("l5"));
-        this->updateArduino(QString("l6"));
-        return;
-    }
-    if (letra == 'z'){
-        this->updateArduino(QString("l1"));
-        this->updateArduino(QString("d2"));
-        this->updateArduino(QString("l3"));
-        this->updateArduino(QString("d4"));
-        this->updateArduino(QString("l5"));
-        this->updateArduino(QString("l6"));
-        return;
+        return "d0l1l4";
     }
 
-    this->updateArduino(QString("d1"));
-    this->updateArduino(QString("d2"));
-    this->updateArduino(QString("d3"));
-    this->updateArduino(QString("d4"));
-    this->updateArduino(QString("d5"));
-    this->updateArduino(QString("d6"));
-    return;
+    if (letra == ' '){
+        return "d0";
+    }
 
+    return "d0";
 }
 
-void Arduino::updateArduino(QString command) {
-    if(conexao->isWritable()){
-         conexao->write(command.toStdString().c_str());
-    } else{
-        qDebug() << "Não foi possível enviar a informação ao arduíno!";
-    }
+void Arduino::stopLeitura(){
+    this->m_quit = true;
 }

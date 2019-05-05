@@ -26,15 +26,16 @@ CONFIG += c++11
 
 SOURCES += \
         main.cpp \
-        mainprincipal.cpp \
-    arduino.cpp
+    arduino.cpp \
+    dialog.cpp
 
 HEADERS += \
-        mainprincipal.h \
-    arduino.h
+    arduino.h \
+    dialog.h
 
 FORMS += \
-        mainprincipal.ui
+        mainprincipal.ui \
+    dialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
