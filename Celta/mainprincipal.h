@@ -23,6 +23,9 @@ private slots:
     void on_btnParar_clicked();
 
 private:
+
+    void setControlsEnabled(bool enable);
+
     Ui::MainPrincipal *ui;
     Arduino *arduino;
 
