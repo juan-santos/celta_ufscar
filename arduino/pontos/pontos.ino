@@ -74,22 +74,39 @@ void loop() {
     
     int executa = 0;
 
-    if(anterior.rose() || proximo.rose()){
-        while (ant == HIGH || prox == HIGH){
-          if(executa == 0){
-
-            if(ant == HIGH){
-              //se o único botão apertado for anterior
-              Serial.write("-1");
-            } else{
-              //se o único botão apertado for proximo
-              Serial.write("+1");
+    if(ant == HIGH && prox == HIGH){
+      
+      while (ant == HIGH && prox == HIGH){
+        if(executa == 0){
+          Serial.write("0"); 
+          executa++;
+        }
+        atualizaBotoes(&ant,&prox);
+      }
+      
+      //enquanto o usuario não soltar os dois botoes o programa não enviará ou receberá mensagens
+      while(ant == HIGH || prox == HIGH){
+        atualizaBotoes(&ant,&prox);
+        delay(TEMPO_DELAY);
+      }
+    }
+    else{
+      
+      if(ant == HIGH || prox == HIGH){
+          while (ant == HIGH || prox == HIGH){
+            
+            if(executa == 0){
+              if(ant == HIGH){
+                Serial.write("-1");//se o único botão apertado for anterior
+              } else{
+                Serial.write("+1");//se o único botão apertado for proximo
+              }
+              executa++;
             }
             
-            executa++;
+            atualizaBotoes(&ant,&prox);
           }
-          atualizaBotoes(&ant,&prox);
-        }
+      }
     }
     
     while(Serial.available()){
