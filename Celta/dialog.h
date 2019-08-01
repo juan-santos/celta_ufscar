@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include "arduino.h"
+#include "convertebraille.h"
 
 namespace Ui {
 class Dialog;
@@ -17,17 +18,11 @@ public:
     ~Dialog();
 
 private slots:
-    void on_btnIniciar_clicked();
-    void on_btnPausar_clicked();
-    void on_btnParar_clicked();
-
-    void showResponse(const QString &s);
-    void processError(const QString &s);
-    void processTimeout(const QString &s);
+    void textChanged();
+    void reiniciarLeitura();
+    void selectLetra(const int);
 
 private:
-
-    void setControlsEnabled(bool enable);
     Ui::Dialog *ui;
     Arduino arduino;
 };

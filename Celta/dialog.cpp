@@ -1,5 +1,6 @@
 #include "dialog.h"
 #include "ui_dialog.h"
+#include <QClipboard>
 #include <QDebug>
 
 Dialog::Dialog(QWidget *parent) :
@@ -7,62 +8,53 @@ Dialog::Dialog(QWidget *parent) :
     ui(new Ui::Dialog) {
     ui->setupUi(this);
 
-    connect(&arduino, &Arduino::response, this, &Dialog::showResponse);
-    connect(&arduino, &Arduino::error, this, &Dialog::processError);
-    connect(&arduino, &Arduino::timeout, this, &Dialog::processTimeout);
+    //finalizar thread ao encerrar o programa
+    connect(this, &Dialog::rejected, &arduino, &Arduino::finalizarThread);
+
+    //alterar o conteúdo a ser escrito
+    connect(this->ui->txtTexto, &QPlainTextEdit::textChanged, this, &Dialog::textChanged);
+
+    //Reiniciar leitura com dois cliques seguidos
+    connect(&this->arduino, &Arduino::reiniciarLeitura, this, &Dialog::reiniciarLeitura);
+
+    //Reiniciar leitura com dois cliques seguidos
+    connect(&this->arduino, &Arduino::selecionarLetra, this, &Dialog::selectLetra);
+
+    QClipboard *clipboard = QApplication::clipboard();
+    ui->txtTexto->document()->setPlainText(clipboard->text()) ;
 
     //deixo com tudo desativado como valor inicial
-    arduino.transaction(' ', 100);
+    arduino.transaction();
+}
 
-    //controles possíveis
-    setControlsEnabled(true);
+void Dialog::textChanged(){
+    arduino.setText(ui->txtTexto->toPlainText());
+}
+
+void Dialog::selectLetra(const int letra){
+
+    QTextCursor c = ui->txtTexto->textCursor();
+
+    if(letra == -1){
+        c.clearSelection();
+    }else{
+        c.setPosition(letra);
+        c.setPosition(letra+1, QTextCursor::KeepAnchor);
+    }
+
+    ui->txtTexto->setTextCursor(c);
+}
+
+void Dialog::reiniciarLeitura(){
+    qDebug() << " Reiniciado ";   
+
+    selectLetra(-1);
+
+    QClipboard *clipboard = QApplication::clipboard();
+    ui->txtTexto->document()->setPlainText(ConverteBraille::convertTextToBraille(clipboard->text()));
 }
 
 //Celta
 Dialog::~Dialog() {
     delete ui;
-}
-
-void Dialog::on_btnIniciar_clicked() {
-    setControlsEnabled(false);
-
-   for(int i = 0; i < ui->txtTexto->toPlainText().size();i++){
-      arduino.transaction(ui->txtTexto->toPlainText().at(i), 3000);
-      arduino.sleep(1 * ui->qSliderVelocimetro->value());
-   }
-
-   setControlsEnabled(true);
-
-}
-
-void Dialog::on_btnPausar_clicked() {
-    setControlsEnabled(true);
-}
-
-void Dialog::on_btnParar_clicked() {
-    this->arduino.stopLeitura();
-    setControlsEnabled(true);
-}
-
-void Dialog::setControlsEnabled(bool enable) {
-    ui->btnParar->setEnabled(!enable);
-    ui->btnPausar->setEnabled(!enable);
-    ui->btnIniciar->setEnabled(enable);
-    ui->txtTexto->setEnabled(enable);
-    ui->qSliderVelocimetro->setEnabled(enable);
-}
-
-void Dialog::showResponse(const QString &s) {
-    //qDebug() << s;
-    setControlsEnabled(true);
-}
-
-void Dialog::processError(const QString &s) {
-    qDebug() << s;
-    setControlsEnabled(true);
-}
-
-void Dialog::processTimeout(const QString &s){
-    qDebug() << s;
-    setControlsEnabled(true);
 }

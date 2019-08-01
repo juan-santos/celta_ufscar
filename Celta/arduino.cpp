@@ -9,84 +9,15 @@ Arduino::Arduino(QObject *parent): QThread(parent) {
 
 Arduino::~Arduino() {
     m_mutex.lock();
-        m_quit = true;
+        this->finalizarThread();
         m_cond.wakeOne();
     m_mutex.unlock();
 
     wait();
 }
 
-void Arduino::transaction(const QChar &request, int waitTimeout) {
-    const QMutexLocker locker(&m_mutex);
-    m_request = request;
-    m_waitTimeout = waitTimeout;
-    if (!isRunning())
-        start();
-    else
-        m_cond.wakeOne();
-}
-
-void Arduino::run() {
-    QSerialPort arduino;
-
-    m_mutex.lock();
-        QChar currentRequest = m_request;
-        int waitTimeout = m_waitTimeout;
-
-        if(!conectarArduino(&arduino)){
-            emit error(tr("Arduino não está conectado"));
-            m_mutex.unlock();
-            return;
-        }
-
-        if (!arduino.open(QSerialPort::ReadWrite)) {
-            emit error(tr("Não foi possível abrir conexão de escrita/leitura com o Arduino"));
-            m_mutex.unlock();
-            return;
-        }
-    m_mutex.unlock();
-
-    while (!m_quit) {
-
-        m_mutex.lock();
-            if(!arduino.isOpen()){
-                this->conectarArduino(&arduino);
-                if (!arduino.open(QSerialPort::ReadWrite)) {
-                    emit error(tr("Não foi possível abrir conexão de escrita/leitura com o Arduino"));
-                    m_mutex.unlock();
-                    return;
-                }
-            }
-
-            QString comando = this->escreveLetra(currentRequest);
-            arduino.write(comando.toStdString().c_str());
-
-            qDebug() << "Letra " << currentRequest << "comando " << comando;
-
-            if (arduino.waitForBytesWritten(waitTimeout)) {
-                if (arduino.waitForReadyRead(waitTimeout)) {// ler resposta
-                    QByteArray responseData = arduino.readAll();
-                    while (arduino.waitForReadyRead(10)){
-                        responseData += arduino.readAll();
-                    }
-
-                    const QString response = QString::fromUtf8(responseData);
-                    emit this->response("Letra finalizada");
-
-                } else {
-                    emit timeout(tr("Ultrapassou tempo de leitura"));
-                }
-
-            } else {
-                emit timeout(tr("Ultrapassou tempo de escrita"));
-            }
-
-
-            m_cond.wait(&m_mutex);
-            currentRequest = m_request;
-            waitTimeout = m_waitTimeout;
-        m_mutex.unlock();
-    }
+void Arduino::finalizarThread(){
+    this->m_quit = true;
 }
 
 bool Arduino::conectarArduino(QSerialPort *arduino){
@@ -121,6 +52,113 @@ bool Arduino::conectarArduino(QSerialPort *arduino){
     }
 
     return false;
+}
+
+void Arduino::transaction() {
+    const QMutexLocker locker(&m_mutex);
+
+    if (!isRunning())
+        start();
+    else
+        m_cond.wakeOne();
+}
+
+void Arduino::run() {
+    QSerialPort arduino;
+
+    m_mutex.lock();
+        QString currentRequest = m_request;
+        int waitTimeout = 50;
+
+        if(!conectarArduino(&arduino)){
+
+            m_mutex.unlock();
+            return;
+        }
+
+        if (!arduino.open(QSerialPort::ReadWrite)) {
+            m_mutex.unlock();
+            return;
+        }
+    m_mutex.unlock();
+
+    int atual = -1, anterior = -1, reiniciar = 0;
+    while (!m_quit) {
+
+        m_mutex.lock();
+
+        if (arduino.waitForReadyRead(waitTimeout)) {
+
+            QByteArray responseData = arduino.readAll();
+            while (arduino.waitForReadyRead(10)){
+                responseData += arduino.readAll();
+            }
+
+            const QString response = QString::fromUtf8(responseData);
+
+            if(response == "+1" || response == "++1"){
+
+                reiniciar = 0;
+
+                if(atual+1 < m_request.size()){
+                    atual++;
+                }
+
+            } else{
+
+                if(response == "-1" || response == "--1"){
+
+                    reiniciar = 0;
+
+                    if(atual > 0){
+                        atual--;
+                    }
+                }
+
+                if(response == "+0" || response == "++0"){
+                    anterior = -1;
+                    atual = -1;
+                    reiniciar++;
+                    emit selecionarLetra(-1);
+                }
+            }
+
+            //qDebug() << " Leitura " << response;
+        }
+
+        if(reiniciar >= 2){
+            anterior = -1;
+            atual = -1;
+            reiniciar = 0;
+
+            emit reiniciarLeitura();
+        }
+
+        if(atual != anterior){
+            anterior = atual;
+
+            emit selecionarLetra(atual);
+
+            QString comando = this->escreveLetra(this->m_request.at(atual));
+            arduino.write(comando.toStdString().c_str());
+
+            if (arduino.waitForBytesWritten(waitTimeout)) {
+                if (arduino.waitForReadyRead(waitTimeout)) { // ler resposta
+                    QByteArray responseData = arduino.readAll();
+                    while (arduino.waitForReadyRead(10)){
+                        responseData += arduino.readAll();
+                    }
+
+                    const QString response = QString::fromUtf8(responseData);
+                }
+            } else{
+
+            }
+        }
+
+        this->sleep(1);
+        m_mutex.unlock();
+    }
 }
 
 QString Arduino::escreveLetra(const QChar &letra){
@@ -206,9 +244,47 @@ QString Arduino::escreveLetra(const QChar &letra){
         return "l1d2l3d4l5l6";
     }
 
+    if (letra == '('){
+        return "";
+    }
+    if (letra == ')'){
+        return "";
+    }
+
+    if (letra == '0'){
+        return "";
+    }
+    if (letra == '1'){
+        return "";
+    }
+    if (letra == '2'){
+        return "";
+    }
+    if (letra == '3'){
+        return "";
+    }
+    if (letra == '4'){
+        return "";
+    }
+    if (letra == '5'){
+        return "";
+    }
+    if (letra == '6'){
+        return "";
+    }
+    if (letra == '7'){
+        return "";
+    }
+    if (letra == '8'){
+        return "";
+    }
+    if (letra == '9'){
+        return "";
+    }
+
     return "d0";
 }
 
-void Arduino::stopLeitura(){
-    this->m_quit = true;
+void Arduino::setText(const QString texto) {
+    this->m_request = texto;
 }

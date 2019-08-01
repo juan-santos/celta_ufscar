@@ -13,13 +13,15 @@ class Arduino : public QThread {
 public:
     explicit Arduino(QObject *parent = nullptr);
     ~Arduino() override;
-    void transaction(const QChar &request, int waitTimeout);
-    void stopLeitura();
+    void transaction();
 
 signals:
-    void response(const QString &s);
-    void error(const QString &s);
-    void timeout(const QString &s);
+    void reiniciarLeitura();
+    void selecionarLetra(const int letra);
+
+public slots:
+    void finalizarThread();
+    void setText(const QString texto);
 
 private:
 
@@ -28,7 +30,7 @@ private:
     QMutex m_mutex;
     QWaitCondition m_cond;
     bool m_quit = false;
-    QChar m_request;
+    QString m_request;
 
     static const quint16 arduino_uno_vendor_id = 9025;
     static const quint16 arduino_uno_product_id = 67;

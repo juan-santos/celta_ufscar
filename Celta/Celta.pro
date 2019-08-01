@@ -27,11 +27,13 @@ CONFIG += c++11
 SOURCES += \
         main.cpp \
     arduino.cpp \
-    dialog.cpp
+    dialog.cpp \
+    convertebraille.cpp
 
 HEADERS += \
     arduino.h \
-    dialog.h
+    dialog.h \
+    convertebraille.h
 
 FORMS += \
     dialog.ui
