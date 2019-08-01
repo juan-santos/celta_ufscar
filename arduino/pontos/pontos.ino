@@ -1,3 +1,16 @@
+#include <Bounce2.h>
+
+Bounce anterior = Bounce(); 
+Bounce proximo = Bounce(); 
+
+#define ANTERIOR 5
+#define PROXIMO 6
+
+int ON = HIGH;
+int OFF = LOW;
+
+int TEMPO_DELAY = 50;
+
 int ponto1A = 13;
 int ponto1B = 12;
 
@@ -16,13 +29,19 @@ int ponto5B = A3;
 int ponto6A = A4;
 int ponto6B = A5;
 
-int ON = 1;
-int OFF = 0;
-
-int TEMPO_DELAY = 50;
-
 void setup() {
-  // put your setup code here, to run once:
+  pinMode(ANTERIOR, INPUT_PULLUP);
+  pinMode(PROXIMO, INPUT_PULLUP);
+
+  //botão anterior
+  anterior.attach(ANTERIOR);
+  anterior.interval(5); // interval in ms
+
+  //botao proximo
+  proximo.attach(PROXIMO);
+  proximo.interval(5); // interval in ms
+
+  // motores
   pinMode(ponto1A, OUTPUT);
   pinMode(ponto1B, OUTPUT);
   pinMode(ponto2A, OUTPUT);
@@ -36,30 +55,79 @@ void setup() {
   pinMode(ponto6A, OUTPUT);
   pinMode(ponto6B, OUTPUT);
   desligar_todos(0);
-  
+
   Serial.begin(9600);
 }
 
-void loop() {
+void atualizaBotoes(int *ant, int *prox){
+  anterior.update();
+  *ant = anterior.read();
   
-  while(Serial.available()){
- 
-    char vlFuncao = Serial.read();
-    int vlPonto = Serial.parseInt();
+  proximo.update();
+  *prox = proximo.read();
+}
+
+void loop() {
     
-    //verifico se a função será de ligar ou desligar
-    if(vlFuncao == 'l'){
-      //se for pra ativar
-      ativarPonto(vlPonto, ON);
+    int ant,prox;
+    atualizaBotoes(&ant,&prox);
+    
+    int executa = 0;
+
+    if(ant == HIGH && prox == HIGH){
       
-    } else{
-      if(vlFuncao == 'd'){
-        //se for pra desativar
-        ativarPonto(vlPonto, OFF);
+      while (ant == HIGH && prox == HIGH){
+        if(executa == 0){
+          Serial.write("0"); 
+          executa++;
+        }
+        atualizaBotoes(&ant,&prox);
+      }
+      
+      //enquanto o usuario não soltar os dois botoes o programa não enviará ou receberá mensagens
+      while(ant == HIGH || prox == HIGH){
+        atualizaBotoes(&ant,&prox);
+        delay(TEMPO_DELAY);
       }
     }
-    Serial.write("ok");
-  }
+    else{
+      
+      if(ant == HIGH || prox == HIGH){
+          while (ant == HIGH || prox == HIGH){
+            
+            if(executa == 0){
+              if(ant == HIGH){
+                Serial.write("-1");//se o único botão apertado for anterior
+              } else{
+                Serial.write("+1");//se o único botão apertado for proximo
+              }
+              executa++;
+            }
+            
+            atualizaBotoes(&ant,&prox);
+          }
+      }
+    }
+    
+    while(Serial.available()){
+ 
+      char vlFuncao = Serial.read();
+      int vlPonto = Serial.parseInt();
+      
+      //verifico se a função será de ligar ou desligar
+      if(vlFuncao == 'l'){
+        //se for pra ativar
+        ativarPonto(vlPonto, ON);
+        
+      } else{
+        if(vlFuncao == 'd'){
+          //se for pra desativar
+          ativarPonto(vlPonto, OFF);
+        }
+      }
+      Serial.write("ok");
+    }
+    
     delay(TEMPO_DELAY);
     desligar_todos(0);
 }
@@ -122,7 +190,8 @@ void desligar_todos(int vpPonto){
       digitalWrite(ponto4A, OFF);
       digitalWrite(ponto4B, OFF);
       digitalWrite(ponto5A, OFF);
-      digitalWrite(ponto6B, OFF);
+      digitalWrite(ponto5B, OFF);
+      digitalWrite(ponto6A, OFF);
       digitalWrite(ponto6B, OFF);
       return;
       
@@ -153,9 +222,3 @@ void desligar_todos(int vpPonto){
   }
  
 }
-
-
-
-
-
-
