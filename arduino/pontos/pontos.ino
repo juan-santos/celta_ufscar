@@ -2,33 +2,33 @@
 Bounce anterior = Bounce(); 
 Bounce proximo = Bounce(); 
 
-#define ANTERIOR 5
-#define PROXIMO 6
+#define ANTERIOR A0
+#define PROXIMO A1
 
 #define ESTADO_BOTAO_DUPLO 1
 #define ESTADO_BOTAO_PROXIMO 2
 #define ESTADO_BOTAO_ANTERIOR 3
 
-#define ESPERA_MEDIA 500
+#define ESPERA_MEDIA 300
 
 #define ON HIGH
 #define OFF LOW
 
-#define TEMPO_DELAY_LOOP 100
-#define TEMPO_DELAY_MOTOR 50
+#define TEMPO_DELAY_LOOP 50
+#define TEMPO_DELAY_MOTOR 100
 
 #define PONTO1A 13
 #define PONTO1B 12
-#define PONTO2A 8
-#define PONTO2B 7
-#define PONTO3A 4
-#define PONTO3B 2
-#define PONTO4A A0
-#define PONTO4B A1
-#define PONTO5A A2
-#define PONTO5B A3
-#define PONTO6A A4
-#define PONTO6B A5
+#define PONTO2A 11
+#define PONTO2B 10
+#define PONTO3A 9
+#define PONTO3B 8
+#define PONTO4A 7
+#define PONTO4B 6
+#define PONTO5A 5
+#define PONTO5B 4
+#define PONTO6A 3
+#define PONTO6B 2
 
 void setup() {
   //configuro os pinos dos botoes
@@ -56,8 +56,15 @@ void setup() {
   pinMode(PONTO5B, OUTPUT);
   pinMode(PONTO6A, OUTPUT);
   pinMode(PONTO6B, OUTPUT);
-  desligar_todos(0);
 
+  ativarPonto(0,ON);
+  delay(TEMPO_DELAY_MOTOR);
+  
+  ativarPonto(0, OFF);
+  delay(TEMPO_DELAY_MOTOR);
+
+  desligar_todos(0);
+  
   Serial.begin(9600);
 }
 
@@ -70,7 +77,7 @@ void atualizaBotoes(int *ant, int *prox){
 }
 
 void loop() {
-    int executa = 0, ant = 0,prox = 0;
+    int executa = 0, ant = 0, prox = 0;
     long tempoInicial = 0, tempoFinal = 0, estado = 0;
 
     atualizaBotoes(&ant,&prox);//obtenho a situacao atual dos botoes
@@ -113,7 +120,7 @@ void loop() {
             }
             
             atualizaBotoes(&ant,&prox); //obtenho o estado atual dos botoes
-            tempoFinal = millis(); //possÃƒÂ­vel tempo final, caso o usuario pare de apertar os botoes
+            tempoFinal = millis(); //possivel tempo final, caso o usuario pare de apertar os botoes
           }
       }
     }
@@ -263,5 +270,3 @@ void desligar_todos(int vpPonto){
   }
  
 }
-
-
