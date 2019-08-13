@@ -20,11 +20,10 @@ Dialog::Dialog(QWidget *parent) :
     //Reiniciar leitura com dois cliques seguidos
     connect(&this->arduino, &Arduino::selecionarLetra, this, &Dialog::selectLetra);
 
-    QClipboard *clipboard = QApplication::clipboard();
-    ui->txtTexto->document()->setPlainText(clipboard->text()) ;
-
     //deixo com tudo desativado como valor inicial
     arduino.transaction();
+
+    this->reiniciarLeitura();
 }
 
 void Dialog::textChanged(){
@@ -37,9 +36,12 @@ void Dialog::selectLetra(const int letra){
 
     if(letra == -1){
         c.clearSelection();
-    }else{
-        c.setPosition(letra);
-        c.setPosition(letra+1, QTextCursor::KeepAnchor);
+    } else{
+
+        if(ui->txtTexto->toPlainText().size() > 0){
+            c.setPosition(letra);
+            c.setPosition(letra+1, QTextCursor::KeepAnchor);
+        }
     }
 
     ui->txtTexto->setTextCursor(c);
@@ -51,7 +53,8 @@ void Dialog::reiniciarLeitura(){
     selectLetra(-1);
 
     QClipboard *clipboard = QApplication::clipboard();
-    ui->txtTexto->document()->setPlainText(ConverteBraille::convertTextToBraille(clipboard->text()));
+    QString texto = clipboard->text(QClipboard::Clipboard);
+    ui->txtTexto->document()->setPlainText(ConverteBraille::convertTextToBraille(texto.toUtf8()));
 }
 
 //Celta

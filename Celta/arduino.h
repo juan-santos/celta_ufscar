@@ -38,6 +38,9 @@ private:
     bool conectarArduino(QSerialPort *arduino);
     QString escreveLetra(const QChar &letra);
 
+    int proximaPalavra(const int atual);
+    int palavraAnterior(const int atual);
+
 };
 
 #endif // ARDUINO_H
