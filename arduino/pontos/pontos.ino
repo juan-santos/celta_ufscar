@@ -14,21 +14,43 @@ Bounce proximo = Bounce();
 #define ON HIGH
 #define OFF LOW
 
-#define TEMPO_DELAY_LOOP 50
-#define TEMPO_DELAY_MOTOR 100
+#define VAZIO_PADRAO B00000000
 
-#define PONTO1A 13
-#define PONTO1B 12
-#define PONTO2A 11
-#define PONTO2B 10
-#define PONTO3A 9
-#define PONTO3B 8
-#define PONTO4A 7
-#define PONTO4B 6
-#define PONTO5A 5
-#define PONTO5B 4
-#define PONTO6A 3
-#define PONTO6B 2
+#define ATIVAR_1 B10000000
+#define DESATIVAR_1 B01000000
+
+#define ATIVAR_2    B00100000
+#define DESATIVAR_2 B00010000
+
+#define ATIVAR_3    B00001000
+#define DESATIVAR_3 B00000100
+
+#define ATIVAR_4    B00000010
+#define DESATIVAR_4 B00000001
+
+#define TEMPO_DELAY_LOOP 50
+#define TEMPO_DELAY_MOTOR 400
+#define TEMPO_DELAY_INICIAR 200
+
+void inicializar(){
+  PORTB = (ATIVAR_2 | ATIVAR_3 | ATIVAR_4);
+  PORTD = (ATIVAR_1 | ATIVAR_2 | ATIVAR_3);
+  delay(TEMPO_DELAY_INICIAR);
+
+  PORTB = (DESATIVAR_2 | DESATIVAR_3 | DESATIVAR_4);
+  PORTD = (DESATIVAR_1 | DESATIVAR_2 | DESATIVAR_3);
+  delay(TEMPO_DELAY_INICIAR);
+}
+
+void executaAlteracoes(int b, int d){
+  PORTB = b;
+  PORTD = d;
+}
+
+void desativarPontos(){
+  PORTB = B00000000;
+  PORTD = B00000000;
+}
 
 void setup() {
   //configuro os pinos dos botoes
@@ -43,29 +65,16 @@ void setup() {
   proximo.attach(PROXIMO);
   proximo.interval(5); // interval in ms
 
-  // motores
-  pinMode(PONTO1A, OUTPUT);
-  pinMode(PONTO1B, OUTPUT);
-  pinMode(PONTO2A, OUTPUT);
-  pinMode(PONTO2B, OUTPUT);
-  pinMode(PONTO3A, OUTPUT);
-  pinMode(PONTO3B, OUTPUT);
-  pinMode(PONTO4A, OUTPUT);
-  pinMode(PONTO4B, OUTPUT);
-  pinMode(PONTO5A, OUTPUT);
-  pinMode(PONTO5B, OUTPUT);
-  pinMode(PONTO6A, OUTPUT);
-  pinMode(PONTO6B, OUTPUT);
-
-  ativarPonto(0,ON);
-  delay(TEMPO_DELAY_MOTOR);
+  DDRB = B11111111; //8 -> 13
+  DDRD = DDRD | B11111100; //2 -> 7
   
-  ativarPonto(0, OFF);
-  delay(TEMPO_DELAY_MOTOR);
-
-  desligar_todos(0);
-  
+  //1 input, 0 output
   Serial.begin(9600);
+
+  inicializar();
+  inicializar();
+  
+  desativarPontos();
 }
 
 void atualizaBotoes(int *ant, int *prox){
@@ -154,119 +163,71 @@ void loop() {
     }
 
     if(Serial.available()){
-      while(Serial.available()){
-   
+      int atualB = VAZIO_PADRAO;
+      int atualD = VAZIO_PADRAO;
+      
+      while(Serial.available()){   
         char vlFuncao = Serial.read();
         int vlPonto = Serial.parseInt();
-        
-        //verifico se a funcao sera de ligar ou desligar
-        if(vlFuncao == 'l'){
-          //se for pra ativar
-          ativarPonto(vlPonto, ON);
-          
-        } else{
-          if(vlFuncao == 'd'){
-            //se for pra desativar
-            ativarPonto(vlPonto, OFF);
-          }
-        }  
+        escolheSentido(vlPonto, vlFuncao, &atualB, &atualD);
       }
       
+      executaAlteracoes(atualB, atualD);  
       Serial.write("ok");
+      
       delay(TEMPO_DELAY_MOTOR);
-      desligar_todos(0);
+      desativarPontos();
     }
     
     delay(TEMPO_DELAY_LOOP);
 }
 
-void ativarPonto(int vpPonto, int vpOperacao){
-  switch(vpPonto){
-    
-    case 0: //EM TODOS os PONTOs
-      digitalWrite(PONTO1A, vpOperacao);
-      digitalWrite(PONTO1B, !vpOperacao);
-      digitalWrite(PONTO2A, vpOperacao);
-      digitalWrite(PONTO2B, !vpOperacao);
-      digitalWrite(PONTO3A, vpOperacao);
-      digitalWrite(PONTO3B, !vpOperacao);
-      digitalWrite(PONTO4A, vpOperacao);
-      digitalWrite(PONTO4B, !vpOperacao);
-      digitalWrite(PONTO5A, vpOperacao);
-      digitalWrite(PONTO6B, !vpOperacao);
-      digitalWrite(PONTO6B, !vpOperacao);
-      return;
-      
-    case 1:
-      digitalWrite(PONTO1A, vpOperacao);
-      digitalWrite(PONTO1B, !vpOperacao);
-      return;
-    case 2:
-      digitalWrite(PONTO2A, vpOperacao);
-      digitalWrite(PONTO2B, !vpOperacao);
-      return;
-    case 3:
-      digitalWrite(PONTO3A, vpOperacao);
-      digitalWrite(PONTO3B, !vpOperacao);
-      return;
-    case 4:
-      digitalWrite(PONTO4A, vpOperacao);
-      digitalWrite(PONTO4B, !vpOperacao);
-      return;
-    case 5:
-      digitalWrite(PONTO5A, vpOperacao);
-      digitalWrite(PONTO5B, !vpOperacao);
-      return;
-    case 6:
-      digitalWrite(PONTO6A, vpOperacao);
-      digitalWrite(PONTO6B, !vpOperacao);
-      return;
+int escolheSentido(int porta, char operacao, int *sinalB, int *sinalD){
+  if(operacao == 'l'){
+    switch(porta){
+      //registradores b
+      case 1:
+        *sinalB = *sinalB | ATIVAR_2;
+        break;
+      case 2:
+        *sinalB = *sinalB | ATIVAR_3;
+        break;
+      case 3:
+        *sinalB = *sinalB | ATIVAR_4;
+        break;
+      //registradores c
+      case 4:
+        *sinalD = *sinalD | ATIVAR_1;
+        break;
+      case 5:
+        *sinalD = *sinalD | ATIVAR_2;
+        break;
+      case 6:
+        *sinalD = *sinalD | ATIVAR_3;
+        break;
+    }
+  } else{
+    switch(porta){
+      //registradores b
+      case 1:
+        *sinalB = *sinalB | DESATIVAR_2;
+        break;
+      case 2:
+        *sinalB = *sinalB | DESATIVAR_3;
+        break;
+      case 3:
+        *sinalB = *sinalB | DESATIVAR_4;
+        break;
+      //registradores c
+      case 4:
+        *sinalD = *sinalD | DESATIVAR_1;
+        break;
+      case 5:
+        *sinalD = *sinalD | DESATIVAR_2;
+        break;
+      case 6:
+        *sinalD = *sinalD | DESATIVAR_3;
+        break;
+    }
   }
-  return;
-}
-
-void desligar_todos(int vpPonto){
- switch(vpPonto){
-    
-    case 0: //EM TODOS os PONTOs
-      digitalWrite(PONTO1A, OFF);
-      digitalWrite(PONTO1B, OFF);
-      digitalWrite(PONTO2A, OFF);
-      digitalWrite(PONTO2B, OFF);
-      digitalWrite(PONTO3A, OFF);
-      digitalWrite(PONTO3B, OFF);
-      digitalWrite(PONTO4A, OFF);
-      digitalWrite(PONTO4B, OFF);
-      digitalWrite(PONTO5A, OFF);
-      digitalWrite(PONTO5B, OFF);
-      digitalWrite(PONTO6A, OFF);
-      digitalWrite(PONTO6B, OFF);
-      return;
-      
-    case 1:
-      digitalWrite(PONTO1A, OFF);
-      digitalWrite(PONTO1B, OFF);
-      return;
-    case 2:
-      digitalWrite(PONTO2A, OFF);
-      digitalWrite(PONTO2B, OFF);
-      return;
-    case 3:
-      digitalWrite(PONTO3A, OFF);
-      digitalWrite(PONTO3B, OFF);
-      return;
-    case 4:
-      digitalWrite(PONTO4A, OFF);
-      digitalWrite(PONTO4B, OFF);
-      return;
-    case 5:
-      digitalWrite(PONTO5A, OFF);
-      digitalWrite(PONTO5B, OFF);
-      return;
-    case 6:
-      digitalWrite(PONTO6A, OFF);
-      digitalWrite(PONTO6B, OFF);
-      return;
-  }
- 
 }
