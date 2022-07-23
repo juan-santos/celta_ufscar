@@ -121,3 +121,5 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.gitignore.io/api/qt,linux,windows,qtcreator
+/new-celta/Celta/nbproject/private/
+/new-celta/Celta/build/
