@@ -44,14 +44,14 @@ public class Utils {
         
         String format = pathFile.substring(pathFile.length() - 3, pathFile.length());
         
-        if("txt".equals(format)) {
-            return new TXTReader(pathFile);
+        switch(format){
+            case "txt":
+                return new TXTReader(pathFile);
+            case "pdf":
+                return new PDFReader(pathFile);
+            default:
+                return null;
         }
         
-        if("pdf".equals(format)) {
-            return new PDFReader(pathFile);
-        }
-        
-        return null;
     }
 }
