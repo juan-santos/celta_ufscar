@@ -5,10 +5,8 @@
  */
 package celta.reader;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,9 +21,9 @@ public class TXTReader extends Reader {
     }
     
     @Override
-    boolean reader(){
+    protected boolean reader(){
         try {
-            this.input = new FileInputStream(this.pathFile);
+            this.input = new FileInputStream(this.file);
             return true;
         } catch (FileNotFoundException ex) {
             Logger.getLogger(TXTReader.class.getName()).log(Level.SEVERE, null, ex);

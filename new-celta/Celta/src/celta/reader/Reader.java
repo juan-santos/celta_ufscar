@@ -15,14 +15,16 @@ import java.util.Scanner;
  */
 public abstract class Reader {
     protected String pathFile;
-    protected FileInputStream input;
+    protected File file;
+    protected FileInputStream input; 
     
     public Reader(String name){
         this.pathFile = name;
+        this.file = new File(this.pathFile);
     }
     
     public boolean fileExists() {
-        return (new File(this.pathFile)).exists();
+        return this.file.exists();
     }
     
     public String getText() {
@@ -30,6 +32,7 @@ public abstract class Reader {
             String data;
             try (Scanner s = new Scanner(this.input).useDelimiter("\\A")) {
                 data = s.hasNext() ? s.next() : "";
+                s.close();
             }
             
             return data;
@@ -38,5 +41,5 @@ public abstract class Reader {
         return ""; 
     }
     
-    abstract boolean reader();
+    abstract protected boolean reader();
 }

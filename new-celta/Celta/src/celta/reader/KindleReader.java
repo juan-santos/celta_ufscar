@@ -21,7 +21,7 @@ public class KindleReader extends Reader {
     }
 
     @Override
-    boolean reader(){
+    protected boolean reader(){
         try {
             this.input = new FileInputStream(this.pathFile);
             return true;
