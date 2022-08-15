@@ -47,23 +47,37 @@ public class FormCelta extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        buttonGroup1 = new javax.swing.ButtonGroup();
-        txtClipboardArea = new javax.swing.JList();
         imgUfscar = new javax.swing.JLabel();
         imgCapes = new javax.swing.JLabel();
+        pnlClipboardArea = new javax.swing.JScrollPane();
+        txtClipboardArea = new javax.swing.JTextArea();
         menuBar = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Celta - Célula Tátil UFSCAR");
+        setAlwaysOnTop(true);
         setPreferredSize(new java.awt.Dimension(600, 400));
         setResizable(false);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent evt) {
+                formWindowClosing(evt);
+            }
+            public void windowOpened(java.awt.event.WindowEvent evt) {
+                formWindowOpened(evt);
+            }
+        });
 
         imgUfscar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/assets/ufscar.png"))); // NOI18N
         imgUfscar.setName("imgUfscar"); // NOI18N
 
         imgCapes.setIcon(new javax.swing.ImageIcon(getClass().getResource("/assets/capes.png"))); // NOI18N
         imgCapes.setName("imgCapes"); // NOI18N
+
+        txtClipboardArea.setEditable(false);
+        txtClipboardArea.setColumns(20);
+        txtClipboardArea.setRows(5);
+        pnlClipboardArea.setViewportView(txtClipboardArea);
 
         jMenu1.setText("Sobre");
         menuBar.add(jMenu1);
@@ -77,7 +91,7 @@ public class FormCelta extends javax.swing.JFrame {
             .add(layout.createSequentialGroup()
                 .addContainerGap()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(txtClipboardArea, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .add(pnlClipboardArea)
                     .add(layout.createSequentialGroup()
                         .add(imgUfscar)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 414, Short.MAX_VALUE)
@@ -88,8 +102,8 @@ public class FormCelta extends javax.swing.JFrame {
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(layout.createSequentialGroup()
                 .addContainerGap()
-                .add(txtClipboardArea, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 303, Short.MAX_VALUE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(pnlClipboardArea, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 298, Short.MAX_VALUE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(imgUfscar)
                     .add(imgCapes))
@@ -100,6 +114,15 @@ public class FormCelta extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
+        arduino = new Thread(new Arduino(this.txtClipboardArea));  
+        arduino.start();
+    }//GEN-LAST:event_formWindowOpened
+
+    private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
+       this.arduino.interrupt();
+    }//GEN-LAST:event_formWindowClosing
     
     /**
      * @param args the command line arguments
@@ -137,13 +160,15 @@ public class FormCelta extends javax.swing.JFrame {
         });
     }
     
+    
+    public Thread arduino;
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JLabel imgCapes;
     private javax.swing.JLabel imgUfscar;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenuBar menuBar;
-    private javax.swing.JList txtClipboardArea;
+    private javax.swing.JScrollPane pnlClipboardArea;
+    private javax.swing.JTextArea txtClipboardArea;
     // End of variables declaration//GEN-END:variables
     
 }
