@@ -5,6 +5,7 @@
  */
 package celta;
 
+import celta.reader.Reader;
 import javax.swing.JTextArea;
 
 enum TypeName {
@@ -206,11 +207,19 @@ public class Arduino implements Runnable {
      * Se for o caminho de um arquivo ele irá abrir o conteúdo do arquivo.
      */
     private void copyValuesClipboard() {
+        //"C:\\Users\\MendeSantos\\Desktop\\file.txt";
         String data = Utils.copyClipboard();
         System.out.println("Copiado da área de transferência: " + data);
         
         if(Utils.identifyWhenIsFile(data)){
             System.out.println("Abrindo arquivo: " + data);
+            Reader text = Utils.typeOfFile(data);
+            
+            if(text != null && text.openFile(data)){
+                data = text.getText();
+            }
+            
+            System.out.println("Texto Colado: " + data);
         }
         
         this.setText(data);

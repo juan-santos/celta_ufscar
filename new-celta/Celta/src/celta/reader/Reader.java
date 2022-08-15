@@ -11,6 +11,5 @@ package celta.reader;
  */
 public interface Reader {
     public boolean openFile(String name);
-    public void reader();
     public String getText();
 }

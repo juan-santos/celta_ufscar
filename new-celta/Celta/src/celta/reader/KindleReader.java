@@ -12,11 +12,6 @@ package celta.reader;
 public class KindleReader implements Reader {
 
     @Override
-    public void reader() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public String getText() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
