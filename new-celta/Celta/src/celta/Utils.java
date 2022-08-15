@@ -45,11 +45,11 @@ public class Utils {
         String format = pathFile.substring(pathFile.length() - 3, pathFile.length());
         
         if("txt".equals(format)) {
-            return new TXTReader();
+            return new TXTReader(pathFile);
         }
         
         if("pdf".equals(format)) {
-            return new PDFReader();
+            return new PDFReader(pathFile);
         }
         
         return null;

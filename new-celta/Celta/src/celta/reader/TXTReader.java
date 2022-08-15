@@ -16,28 +16,14 @@ import java.util.logging.Logger;
  *
  * @author MendeSantos
  */
-public class TXTReader implements Reader {
+public class TXTReader extends Reader {
     
-    private String pathFile;
-    FileInputStream input;    
-
-    @Override
-    public boolean openFile(String name) {
-        this.pathFile = name;
-        return (new File(this.pathFile)).exists();
+    public TXTReader(String name){
+        super(name);
     }
     
     @Override
-    public String getText() {
-        if(this.reader()){
-            Scanner s = new Scanner(this.input).useDelimiter("\\A");
-            return s.hasNext() ? s.next() : "";
-        }
-
-        return ""; 
-    }
-    
-    private boolean reader(){
+    boolean reader(){
         try {
             this.input = new FileInputStream(this.pathFile);
             return true;

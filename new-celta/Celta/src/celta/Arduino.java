@@ -207,7 +207,7 @@ public class Arduino implements Runnable {
      * Se for o caminho de um arquivo ele irá abrir o conteúdo do arquivo.
      */
     private void copyValuesClipboard() {
-        //"C:\\Users\\MendeSantos\\Desktop\\file.txt";
+        //String data = "C:\\Users\\MendeSantos\\Desktop\\magda.txt";
         String data = Utils.copyClipboard();
         System.out.println("Copiado da área de transferência: " + data);
         
@@ -215,7 +215,7 @@ public class Arduino implements Runnable {
             System.out.println("Abrindo arquivo: " + data);
             Reader text = Utils.typeOfFile(data);
             
-            if(text != null && text.openFile(data)){
+            if(text != null && text.fileExists()){
                 data = text.getText();
             }
             
