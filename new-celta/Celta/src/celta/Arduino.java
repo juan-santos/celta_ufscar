@@ -53,8 +53,9 @@ public class Arduino implements Runnable {
      */
     public void setText(String texto) {
         this.atual = -1;
-        this.texto = texto;
-        this.textArea.setText(texto);
+
+        this.texto = this.convertTextToBraille(texto);
+        this.textArea.setText(this.texto);
     }
 
     private void atualizaCursor() {
@@ -76,9 +77,22 @@ public class Arduino implements Runnable {
      * @param value comando a ser executado
      */
     private void execCmd(String value) {
-
+        int aux = -1;
         switch (value) {
             case "++1":
+                aux = this.proximaPalavra(this.atual);
+                
+                if(aux != -1){
+                    atual = aux;
+                    System.out.println("Avançar palavra");
+                } else if(atual+1 < this.texto.length()){
+                    atual++;
+                    System.out.println("Avançar");
+                }
+                
+                this.controlePorta.enviaDados(this.escreveLetra(this.texto.charAt(this.atual)));
+                this.atualizaCursor();
+                break;
             case "+1":
                 if (this.texto.length() == this.atual) {
                     System.out.println("Já estamos na ultima letra: acionar beep");
@@ -92,6 +106,19 @@ public class Arduino implements Runnable {
                 break;
 
             case "--1":
+                aux = this.palavraAnterior(this.atual);
+                
+                if(aux != -1){
+                    this.atual = aux;
+                    System.out.println("Voltar palavra");
+                } else if(this.atual > 0){
+                    this.atual--; 
+                }
+                
+                this.controlePorta.enviaDados(this.escreveLetra(this.texto.charAt(this.atual)));
+                this.atualizaCursor();
+                break;
+                
             case "-1":
                 if (this.atual == 0) {
                     System.out.println("Já estamos na primeira letra: acionar 2x beep");
@@ -122,6 +149,7 @@ public class Arduino implements Runnable {
      * ativados/desativados
      */
     private String escreveLetra(char letra) {
+        System.out.println("Letra: "+ letra);
         switch (letra) {
             case ' ':
                 return "d1d2d3d4d5d6";
@@ -177,6 +205,62 @@ public class Arduino implements Runnable {
                 return "l1d2l3l4l5l6";
             case 'z':
                 return "l1d2l3d4l5l6";
+            case '\u02E9':
+                return "d1d2l3l4l5l6";
+            case '\u035D':
+                return "d1d2d3l4d5l6";
+            case '\u00E1':
+                return "l1l2l3d4l5l6";
+            case '\u00E0':
+                return "l1l2d3l4d5l6";
+            case '\u00E2':
+                return "l1d2d3d4d5l6";
+            case '\u00e3':
+                return "d1d2l3l4l5d6";
+            case '\u00e7':
+                return "l1l2l3l4d5l6";
+            case '\u00E9':
+                return "l1l2l3l4l5l6";
+            case '\u00EA':
+                return "l1l2d3d4d5l6";
+            case '\u00ED':
+                return "d1d2l3l4d5d6";
+            case '\u00F3':
+                return "d1d2l3l4d5l6";
+            case '\u00F4':
+                return "l1d2d3l4l5l6";
+            case '\u00F5':
+                return "d1l2d3l4d5l6";
+            case '\u00FA':
+                return "d1l2l3l4l5l6";
+            case '\u00FC':
+                return "l1l2d3d4l5l6";
+            case '(':
+                return "l1l2d3d4d5l6";
+            case ')':
+                return "d1d2l3l4l5d6";
+            case '[':
+                return "l1l2l3d4l5l6";
+            case ']':
+                return "d1l2l3l4l5l6";
+            case ',':
+                return "d1l2d3d4d5d6";
+            case ';':
+                return "d1l2l3d4d5d6";
+            case ':':
+                return "d1l2d3d4l5d6";
+            case '.':
+                return "d1d2l3d4d5d6";
+            case '`':
+                return "d1d2l3d4d5d6";
+            case '?':
+                return "d1l2d3d4d5l6";
+            case '!':
+                return "d1l2l3d4l5d6";
+            case '-':
+                return "d1d2l3d4d5l6";
+            case '+':
+                return "d1l2l3d4l5d6";
         }
 
         return "d0";
@@ -203,4 +287,61 @@ public class Arduino implements Runnable {
 
         this.setText(data);
     }
+
+    private String convertTextToBraille(String texto) {
+        StringBuilder aux = new StringBuilder();
+
+        for (int i = 0; i < texto.length(); i++) {
+
+            //caracteres numéricos
+            if (texto.charAt(i) >= 48 && texto.charAt(i) <= 57) {
+                aux.append('\u02E9');
+                aux.append(texto.charAt(i));
+                continue;
+            } else {
+
+                //caracteres maiusculos
+                if (texto.charAt(i) >= 65 && texto.charAt(i) <= 90) {
+
+                    aux.append('\u035D');
+                    aux.append(Character.toLowerCase(texto.charAt(i)));
+                    continue;
+                }
+            }
+
+            aux.append(texto.charAt(i));
+        }
+
+        return aux.toString();
+    }
+    
+    private int proximaPalavra(int start){
+        int atual = start;
+
+        while((atual = this.texto.indexOf(" ", atual)) != -1){
+
+            if(atual+1 < this.texto.length() && this.texto.charAt(atual+1) != ' '){
+                return atual+1;
+            }
+            atual++;
+        }
+
+        return -1;
+    }
+
+    private int palavraAnterior(int end){
+        int atual = 0, anterior = 0;
+
+        String aux = this.texto.substring(0, end < 1 ? 0 : end - 1);
+        while((atual = aux.indexOf(" ", atual)) != -1){
+
+            if(atual+1 < this.texto.length() && this.texto.charAt(atual+1) != ' '){
+                anterior = atual+1;
+            }
+            atual++;
+        }
+
+        return anterior;
+    }
+
 }
