@@ -77,7 +77,7 @@ public class Arduino implements Runnable {
      * @param value comando a ser executado
      */
     private void execCmd(String value) {
-        int aux = -1;
+        int aux;
         switch (value) {
             case "++1":
                 aux = this.proximaPalavra(this.atual);
