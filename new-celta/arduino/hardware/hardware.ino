@@ -184,10 +184,7 @@ void loop() {
     }
 
     executaAlteracoes(atualB, atualD);
-    delay(TEMPO_DELAY_MOTOR);
-
     Serial.write("ok");
-    // desativarPontos();
   }
 }
 
@@ -213,6 +210,11 @@ int escolheSentido(int porta, char operacao, int *sinalB, int *sinalD) {
         break;
       case 6:
         *sinalD = *sinalD | ATIVAR_3;
+        break;
+      case 7:
+        digitalWrite(BEEP, ON);
+        delay(TEMPO_DELAY_MOTOR);
+        digitalWrite(BEEP, OFF);
         break;
     }
 

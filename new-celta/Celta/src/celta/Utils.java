@@ -10,8 +10,8 @@ import celta.reader.Reader;
 import celta.reader.TXTReader;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.io.IOException;
 
 /**
  *
@@ -23,14 +23,8 @@ public class Utils {
      * Método responsável por copiar dados da área de transferência
      * @return Retorna uma string com os dados da área de transferência
      */
-    public static String copyClipboard(){
-        try {
-            return (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor); 
-            
-        } catch (Exception ex) {
-            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        return "";
+    public static String copyClipboard() throws UnsupportedFlavorException, IOException{
+        return (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor); 
     }
     
     public static boolean identifyWhenIsFile(String clipboard){

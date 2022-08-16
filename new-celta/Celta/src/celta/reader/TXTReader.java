@@ -21,13 +21,8 @@ public class TXTReader extends Reader {
     }
     
     @Override
-    protected boolean reader(){
-        try {
-            this.input = new FileInputStream(this.file);
-            return true;
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(TXTReader.class.getName()).log(Level.SEVERE, null, ex);
-            return false;
-        }
+    protected boolean reader() throws FileNotFoundException{
+        this.input = new FileInputStream(this.file);
+        return true;
     }
 }

@@ -27,7 +27,7 @@ public abstract class Reader {
         return this.file.exists();
     }
     
-    public String getText() {
+    public String getText() throws Exception {
         if(this.reader()){
             String data;
             try (Scanner s = new Scanner(this.input).useDelimiter("\\A")) {
@@ -41,5 +41,5 @@ public abstract class Reader {
         return ""; 
     }
     
-    abstract protected boolean reader();
+    abstract protected boolean reader() throws Exception;
 }

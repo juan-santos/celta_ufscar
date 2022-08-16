@@ -1,6 +1,7 @@
 package celta.reader;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -25,7 +26,7 @@ public class PDFReader extends Reader {
     }
     
     @Override
-    public String getText() {
+    public String getText() throws Exception {
         if(this.reader()){
             return ch.toString();
         }
@@ -34,21 +35,15 @@ public class PDFReader extends Reader {
     }
     
     @Override
-    protected boolean reader(){
-          
-        try {
-            this.input = new FileInputStream(this.file);
-            this.ch = new BodyContentHandler();
-            
-            Metadata md = new Metadata();
-            ParseContext pc = new ParseContext();
-            PDFParser pp = new PDFParser();
-            
-            pp.parse(this.input, ch, md, pc);
-            return true;
-        } catch (IOException | SAXException | TikaException ex) {
-            Logger.getLogger(PDFReader.class.getName()).log(Level.SEVERE, null, ex);
-            return false;
-        }
+    protected boolean reader() throws Exception {
+        this.input = new FileInputStream(this.file);
+        this.ch = new BodyContentHandler();
+
+        Metadata md = new Metadata();
+        ParseContext pc = new ParseContext();
+        PDFParser pp = new PDFParser();
+
+        pp.parse(this.input, ch, md, pc);
+        return true;
     }
 }
