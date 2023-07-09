@@ -3,6 +3,7 @@ import RPi.GPIO as GPIO
 import time
 from typing import List, Tuple
 import socket   
+import threading
 
 EnabledMotor = 2
 
@@ -48,29 +49,35 @@ def GPIOConfig():
         GPIO.setup(enabled, GPIO.OUT) # configuro todos os pinos
         GPIO.setup(disabled, GPIO.OUT)
 
+# Método responsável por ficar escutando os botões e enviar o status ao cliente
+def loop_button(encerrar_event, client_socket):
+    while not encerrar_event.is_set():
+        client_socket.send('Loop do botao'.encode())
+        time.sleep(10)
+        pass
+
 # Loop principal
 def loop():
-
     while True:    
         client_socket, address = tcp.accept()
-
         message = "Conectado"
-        print(message, address)
 
         client_socket.send(message.encode())
 
+        encerrar_event = threading.Event()
+        button_thread = threading.Thread(daemon=True, target=loop_button, args=(encerrar_event, client_socket,))
+        button_thread.start()
+
         while True:
-            decodeMessage = client_socket.recv(1024).decode()
+            decodeMessage = client_socket.recv(1024).decode() 
 
             if not decodeMessage:
+                encerrar_event.set()
+                button_thread.join()
                 break
 
             resposta = changeGPIO(decodeMessage)
-
             client_socket.send(resposta.encode())
-        
-        print("Final do loop")
-            
 
 #Método responsável por ler o código da letra e ativar/desativar os pinos correspondentes
 def changeGPIO(message: str) -> str :
@@ -80,9 +87,12 @@ def changeGPIO(message: str) -> str :
 
     if len(message) == 6:
         for value in message:
-            enabled.append(GPIO.HIGH if value == '1' else GPIO.LOW)
-            disabled.append(GPIO.LOW if value == '1' else GPIO.HIGH)
-    else:
+            if value in ['1', '0']:
+                enabled.append(GPIO.HIGH if value == '1' else GPIO.LOW)
+                disabled.append(GPIO.LOW if value == '1' else GPIO.HIGH)
+            else:
+                return 'código inválido'
+    else: 
         return 'código inválido' # caso o código recebido pelo aplicativo não esteja adequado ao padrão
 
     GPIO.output(EnabledList + DisabledList, enabled + disabled)
@@ -106,5 +116,5 @@ if __name__ == '__main__':     # Program start from here
     try:
         print('Pressione Ctrl+C para sair')
         loop()
-    except Exception:
+    except KeyboardInterrupt:
         destroy() 
