@@ -1,6 +1,8 @@
+#!usr/bin/env python3
 import RPi.GPIO as GPIO
 import time
 from typing import List, Tuple
+import socket   
 
 EnabledMotor = 2
 
@@ -24,8 +26,20 @@ EnabledList: Tuple[int] = (ATIVAR1, ATIVAR2, ATIVAR3, ATIVAR4, ATIVAR5, ATIVAR6)
 DisabledList: Tuple[int] = (DESATIVAR1, DESATIVAR2, DESATIVAR3,
                 DESATIVAR4, DESATIVAR5, DESATIVAR6)
 
+tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-def setup():
+def setup():  
+    GPIOConfig()
+
+    GPIO.output(EnabledMotor, GPIO.HIGH)  # Liga todos os motores
+    
+    #inicio os motores, de forma a abaixar possiveis pinos que estejam levantados
+    changeGPIO('000000')
+    time.sleep(0.2)
+    changeGPIO('000000')
+
+# Método responsável por configurar a placa do raspberry
+def GPIOConfig():
     GPIO.setmode(GPIO.BCM)
 
     GPIO.setup(EnabledMotor, GPIO.OUT) # pino responsável por ativar/desativar todos os motores
@@ -34,21 +48,33 @@ def setup():
         GPIO.setup(enabled, GPIO.OUT) # configuro todos os pinos
         GPIO.setup(disabled, GPIO.OUT)
 
-    GPIO.output(EnabledMotor, GPIO.HIGH)  # Liga todos os motores
-
 # Loop principal
 def loop():
-    while True:
-        changeGPIO('101010')
 
-        # Aguarda um tempo
-        time.sleep(10)
+    while True:    
+        client_socket, address = tcp.accept()
 
-        changeGPIO('111000')
+        message = "Conectado"
+        print(message, address)
 
-        time.sleep(10)
+        client_socket.send(message.encode())
 
-def changeGPIO(message: str):
+        while True:
+            decodeMessage = client_socket.recv(1024).decode()
+
+            if not decodeMessage:
+                break
+
+            resposta = changeGPIO(decodeMessage)
+
+            client_socket.send(resposta.encode())
+        
+        print("Final do loop")
+            
+
+#Método responsável por ler o código da letra e ativar/desativar os pinos correspondentes
+def changeGPIO(message: str) -> str :
+    print('Letra recebida: ', message)
     enabled: List[int] = []
     disabled: List[int] = []
 
@@ -57,23 +83,28 @@ def changeGPIO(message: str):
             enabled.append(GPIO.HIGH if value == '1' else GPIO.LOW)
             disabled.append(GPIO.LOW if value == '1' else GPIO.HIGH)
     else:
-        return '' # caso o código recebido pelo aplicativo não esteja adequado ao padrão
+        return 'código inválido' # caso o código recebido pelo aplicativo não esteja adequado ao padrão
 
     GPIO.output(EnabledList + DisabledList, enabled + disabled)
-    # print('Lista de pinos completa: ', EnabledList + DisabledList)
-    # print('Lista de ativacao: ', enabled)
-    # print('Lista de desativacao: ', disabled)
+    time.sleep(0.4)
 
+    GPIO.output(EnabledList + DisabledList, GPIO.LOW) #Após os motores exibirem a 
+                                                #letra eu desativo todos os motores
+    return "ok"
+
+# Método responsável por limpar as placas GPIO e encerrar a conexão socket
 def destroy():
     GPIO.cleanup()
-
+    tcp.close()
 
 if __name__ == '__main__':     # Program start from here
+    # Variavel responsável pela conexão socket
+    tcp.bind(('localhost', 50000))
+    tcp.listen(1)
 
     setup()
-
     try:
         print('Pressione Ctrl+C para sair')
         loop()
-    except KeyboardInterrupt:
-        destroy()
+    except Exception:
+        destroy() 
