@@ -5,7 +5,21 @@ from typing import List, Tuple
 import socket   
 import threading
 
-EnabledMotor = 2
+# Variáveis para gerenciar os botões
+inicio_botao1 = 0
+inicio_botao2 = 0
+
+final_botao1 = 0
+final_botao2 = 0
+
+duploClick = False
+
+# pino para ativar todos os motores
+ENABLED_MOTOR = 2 #PIN 3
+
+# pinos dos botões
+BUTTON_NEXT = 24 #PIN 18
+BUTTON_BACK = 25 #PIN 22
 
 # pinos responsáveis por fazer o motor girar no sentido que ative o braille
 ATIVAR1 = 0 #PIN 27
@@ -29,10 +43,44 @@ DisabledList: Tuple[int] = (DESATIVAR1, DESATIVAR2, DESATIVAR3,
 
 tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+# Função de callback para o Botão 1
+def callback_botao1(channel):
+    global inicio_botao1
+    global final_botao1
+    global duploClick
+
+    estado_botao2 = GPIO.input(BUTTON_BACK)
+
+    if not GPIO.input(BUTTON_NEXT):  # Botão pressionado
+        inicio_botao1 = time.time()
+
+        if estado_botao2:
+            duploClick = True
+
+    else:  # Botão solto
+        final_botao1 = time.time() - inicio_botao1
+        
+# Função de callback para o Botão 2
+def callback_botao2(channel):
+    global inicio_botao2
+    global final_botao2
+    global duploClick
+
+    estado_botao1 = GPIO.input(BUTTON_NEXT)
+    
+    if GPIO.input(BUTTON_BACK):  # Botão pressionado
+        inicio_botao2 = time.time()
+
+        if not estado_botao1:
+            duploClick = True
+
+    else:  # Botão solto
+        final_botao2 = time.time() - inicio_botao2
+     
 def setup():  
     GPIOConfig()
 
-    GPIO.output(EnabledMotor, GPIO.HIGH)  # Liga todos os motores
+    GPIO.output(ENABLED_MOTOR, GPIO.HIGH)  # Liga todos os motores
     
     #inicio os motores, de forma a abaixar possiveis pinos que estejam levantados
     changeGPIO('000000')
@@ -43,18 +91,52 @@ def setup():
 def GPIOConfig():
     GPIO.setmode(GPIO.BCM)
 
-    GPIO.setup(EnabledMotor, GPIO.OUT) # pino responsável por ativar/desativar todos os motores
+    GPIO.setup(ENABLED_MOTOR, GPIO.OUT) # pino responsável por ativar/desativar todos os motores
+    
+    GPIO.setup(BUTTON_NEXT, GPIO.IN, pull_up_down=GPIO.PUD_UP)    # Pino do botão como saída e aciona o pull-up
+    GPIO.setup(BUTTON_BACK, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
-    for enabled, disabled in zip(EnabledList, DisabledList):
-        GPIO.setup(enabled, GPIO.OUT) # configuro todos os pinos
-        GPIO.setup(disabled, GPIO.OUT)
+    GPIO.setup(EnabledList + DisabledList, GPIO.OUT) # configuro todos os pinos
 
 # Método responsável por ficar escutando os botões e enviar o status ao cliente
 def loop_button(encerrar_event, client_socket):
+    global final_botao1
+    global final_botao2
+    global duploClick
+
     while not encerrar_event.is_set():
-        client_socket.send('Loop do botao'.encode())
-        time.sleep(10)
-        pass
+        if duploClick:
+            while (not final_botao1) or (not final_botao2):
+                pass
+
+            time.sleep(0.2)
+
+            if final_botao1 > 0.3 or final_botao2 > 0.3:
+                client_socket.send('++0'.encode())
+            else:
+                client_socket.send('+0'.encode())
+
+            final_botao1 = 0
+            final_botao2 = 0
+            duploClick = False
+
+        if final_botao1:
+            if final_botao1 > 0.3:
+                client_socket.send('++1'.encode())
+            else:
+                client_socket.send('+1'.encode())
+
+            final_botao1 = 0
+
+        elif final_botao2:
+            if final_botao2 > 0.3:
+                client_socket.send('--1'.encode())
+            else:
+                client_socket.send('-1'.encode())
+
+            final_botao2 = 0
+
+        pass 
 
 # Loop principal
 def loop():
@@ -113,6 +195,11 @@ if __name__ == '__main__':     # Program start from here
     tcp.listen(1)
 
     setup()
+
+    # Registro dos callbacks para os eventos de nível alto (RISING)
+    GPIO.add_event_detect(BUTTON_NEXT, GPIO.BOTH, callback=callback_botao1, bouncetime=75)
+    GPIO.add_event_detect(BUTTON_BACK, GPIO.BOTH, callback=callback_botao2, bouncetime=75)
+
     try:
         print('Pressione Ctrl+C para sair')
         loop()
