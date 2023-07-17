@@ -112,9 +112,11 @@ def loop_button(encerrar_event, client_socket):
             time.sleep(0.2)
 
             if final_botao1 > 0.3 or final_botao2 > 0.3:
-                client_socket.send('++0'.encode())
+                client_socket.send("++0\n".encode())
+                print("Enviado ", "++0")
             else:
-                client_socket.send('+0'.encode())
+                client_socket.send("+0\n".encode())
+                print("Enviado ", "+0")
 
             final_botao1 = 0
             final_botao2 = 0
@@ -122,17 +124,21 @@ def loop_button(encerrar_event, client_socket):
 
         if final_botao1:
             if final_botao1 > 0.3:
-                client_socket.send('++1'.encode())
+                client_socket.send("++1\n".encode())
+                print("Enviado ", "++1")
             else:
-                client_socket.send('+1'.encode())
+                client_socket.send("+1\n".encode())
+                print("Enviado ", "+1")
 
             final_botao1 = 0
 
         elif final_botao2:
             if final_botao2 > 0.3:
-                client_socket.send('--1'.encode())
+                client_socket.send("--1\n".encode())
+                print("Enviado ", "--1")
             else:
-                client_socket.send('-1'.encode())
+                client_socket.send("-1\n".encode())
+                print("Enviado ", "-1")
 
             final_botao2 = 0
 
@@ -142,7 +148,7 @@ def loop_button(encerrar_event, client_socket):
 def loop():
     while True:    
         client_socket, address = tcp.accept()
-        message = "Conectado"
+        message = "Conectado\n"
 
         client_socket.send(message.encode())
 
@@ -159,11 +165,13 @@ def loop():
                 break
 
             resposta = changeGPIO(decodeMessage)
-            client_socket.send(resposta.encode())
+            if resposta:
+                client_socket.send(resposta.encode())
+                print("Enviado ", resposta.encode())
 
 #Método responsável por ler o código da letra e ativar/desativar os pinos correspondentes
 def changeGPIO(message: str) -> str :
-    print('Letra recebida: ', message)
+    print("Letra recebida: ", message)
     enabled: List[int] = []
     disabled: List[int] = []
 
@@ -173,16 +181,16 @@ def changeGPIO(message: str) -> str :
                 enabled.append(GPIO.HIGH if value == '1' else GPIO.LOW)
                 disabled.append(GPIO.LOW if value == '1' else GPIO.HIGH)
             else:
-                return 'código inválido'
+                return ''
     else: 
-        return 'código inválido' # caso o código recebido pelo aplicativo não esteja adequado ao padrão
+        return '' # caso o código recebido pelo aplicativo não esteja adequado ao padrão
 
     GPIO.output(EnabledList + DisabledList, enabled + disabled)
     time.sleep(0.4)
 
     GPIO.output(EnabledList + DisabledList, GPIO.LOW) #Após os motores exibirem a 
                                                 #letra eu desativo todos os motores
-    return "ok"
+    return "ok\n"
 
 # Método responsável por limpar as placas GPIO e encerrar a conexão socket
 def destroy():
@@ -191,7 +199,7 @@ def destroy():
 
 if __name__ == '__main__':     # Program start from here
     # Variavel responsável pela conexão socket
-    tcp.bind(('localhost', 50000))
+    tcp.bind(('192.168.15.30', 50000))
     tcp.listen(1)
 
     setup()
