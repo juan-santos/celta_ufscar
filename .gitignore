@@ -122,6 +122,6 @@ $RECYCLE.BIN/
 
 # End of https://www.gitignore.io/api/qt,linux,windows,qtcreator
 
-/java/Celta/target/*
-
 .DS_Store
+
+/new_celta/java/Celta/target/*
