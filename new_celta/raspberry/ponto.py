@@ -83,7 +83,7 @@ def setup():
     GPIO.output(ENABLED_MOTOR, GPIO.HIGH)  # Liga todos os motores
     
     #inicio os motores, de forma a abaixar possiveis pinos que estejam levantados
-    for i in range(1000):
+    for i in range(2):
         changeGPIO('000000')
         time.sleep(0.4)
         changeGPIO('111111')
