@@ -18,8 +18,8 @@ duploClick = False
 ENABLED_MOTOR = 2 #PIN 3
 
 # pinos dos botões
-BUTTON_NEXT = 24 #PIN 18
-BUTTON_BACK = 25 #PIN 22
+BUTTON_BACK = 24 #PIN 18
+BUTTON_NEXT = 25 #PIN 22
 
 # pinos responsáveis por fazer o motor girar no sentido que ative o braille
 ATIVAR1 = 0 #PIN 27
@@ -49,9 +49,9 @@ def callback_botao1(channel):
     global final_botao1
     global duploClick
 
-    estado_botao2 = GPIO.input(BUTTON_BACK)
+    estado_botao2 = GPIO.input(BUTTON_NEXT)
 
-    if not GPIO.input(BUTTON_NEXT):  # Botão pressionado
+    if not GPIO.input(BUTTON_BACK):  # Botão pressionado
         inicio_botao1 = time.time()
 
         if estado_botao2:
@@ -66,9 +66,9 @@ def callback_botao2(channel):
     global final_botao2
     global duploClick
 
-    estado_botao1 = GPIO.input(BUTTON_NEXT)
+    estado_botao1 = GPIO.input(BUTTON_BACK)
     
-    if GPIO.input(BUTTON_BACK):  # Botão pressionado
+    if GPIO.input(BUTTON_NEXT):  # Botão pressionado
         inicio_botao2 = time.time()
 
         if not estado_botao1:
@@ -83,9 +83,11 @@ def setup():
     GPIO.output(ENABLED_MOTOR, GPIO.HIGH)  # Liga todos os motores
     
     #inicio os motores, de forma a abaixar possiveis pinos que estejam levantados
-    changeGPIO('000000')
-    time.sleep(0.2)
-    changeGPIO('000000')
+    for i in range(1000):
+        changeGPIO('000000')
+        time.sleep(0.4)
+        changeGPIO('111111')
+        time.sleep(0.4)
 
 # Método responsável por configurar a placa do raspberry
 def GPIOConfig():
@@ -93,8 +95,8 @@ def GPIOConfig():
 
     GPIO.setup(ENABLED_MOTOR, GPIO.OUT) # pino responsável por ativar/desativar todos os motores
     
-    GPIO.setup(BUTTON_NEXT, GPIO.IN, pull_up_down=GPIO.PUD_UP)    # Pino do botão como saída e aciona o pull-up
-    GPIO.setup(BUTTON_BACK, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+    GPIO.setup(BUTTON_BACK, GPIO.IN, pull_up_down=GPIO.PUD_UP)    # Pino do botão como saída e aciona o pull-up
+    GPIO.setup(BUTTON_NEXT, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
     GPIO.setup(EnabledList + DisabledList, GPIO.OUT) # configuro todos os pinos
 
@@ -205,8 +207,8 @@ if __name__ == '__main__':     # Program start from here
     setup()
 
     # Registro dos callbacks para os eventos de nível alto (RISING)
-    GPIO.add_event_detect(BUTTON_NEXT, GPIO.BOTH, callback=callback_botao1, bouncetime=75)
-    GPIO.add_event_detect(BUTTON_BACK, GPIO.BOTH, callback=callback_botao2, bouncetime=75)
+    GPIO.add_event_detect(BUTTON_BACK, GPIO.BOTH, callback=callback_botao1, bouncetime=75)
+    GPIO.add_event_detect(BUTTON_NEXT, GPIO.BOTH, callback=callback_botao2, bouncetime=75)
 
     try:
         print('Pressione Ctrl+C para sair')
