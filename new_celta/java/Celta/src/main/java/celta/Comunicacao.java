@@ -11,8 +11,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 
@@ -24,7 +22,7 @@ public class Comunicacao {
 
     private OutputStream serialOut;
     private InputStream serialIn;
-    private JButton btnReconectar;
+    private final JButton btnReconectar;
     Socket socket;
 
     InputStreamReader inputStreamReader;
@@ -37,7 +35,7 @@ public class Comunicacao {
      */
     public Comunicacao(JButton btnReconectar) {
         this.btnReconectar = btnReconectar;
-        this.initialize();
+        //this.initialize();
     }
 
     /**
@@ -104,9 +102,7 @@ public class Comunicacao {
                 JOptionPane.showMessageDialog(null, "Não foi possível enviar o dado. ",
                         "Enviar dados", JOptionPane.PLAIN_MESSAGE);
             }
-        }
-
-//        
+        }    
     }
 
     /**

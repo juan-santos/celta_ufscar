@@ -5,7 +5,7 @@
  */
 package celta;
 
-//import celta.reader.PDFReader;
+import celta.reader.PDFReader;
 import celta.reader.Reader;
 import celta.reader.TXTReader;
 import java.awt.Toolkit;
@@ -42,7 +42,7 @@ public class Utils {
             case "txt":
                 return new TXTReader(pathFile);
             case "pdf":
-//                return new PDFReader(pathFile);
+                return new PDFReader(pathFile);
             default:
                 return null;
         }
