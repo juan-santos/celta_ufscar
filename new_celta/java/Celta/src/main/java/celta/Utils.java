@@ -28,7 +28,7 @@ public class Utils {
     }
     
     public static boolean identifyWhenIsFile(String clipboard){
-        return clipboard.matches("[a-zA-Z]:[\\\\\\/](?:[a-zA-Z0-9]+[\\\\\\/])*([a-zA-Z0-9]+\\.[A-Za-z]{3}$)");
+        return clipboard.matches("[a-zA-Z]:[\\\\\\/](?:[a-zA-Z0-9]+[\\\\\\/])*([a-zA-Z0-9]+\\.[A-Za-z]{3}$)") || clipboard.matches("^(.*)\\/([^\\/]*)$");
     }
     
     public static Reader typeOfFile(String pathFile) {

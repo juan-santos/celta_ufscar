@@ -35,7 +35,7 @@ public class Comunicacao {
      */
     public Comunicacao(JButton btnReconectar) {
         this.btnReconectar = btnReconectar;
-        //this.initialize();
+        this.initialize();
     }
 
     /**
